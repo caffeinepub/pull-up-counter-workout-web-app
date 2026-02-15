@@ -1,13 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Prevent “today” stats and daily goal from unexpectedly resetting by making day tracking timezone-safe, ensuring consistent authenticated/unauthenticated persistence, and persisting backend state across canister upgrades.
+**Goal:** Fix persistence and rehydration so Today totals/sets and daily goal reliably survive refresh, browser restart, and backend upgrades, without briefly showing “reset” values during authenticated load.
 
 **Planned changes:**
-- Identify and fix the root cause(s) of unexpected stat resets in both local-only (unauthenticated) and backend-synced (authenticated) modes.
-- Update local-only persistence to use a stable local-day identifier so “today” stats and daily goal only roll over when the user’s local date changes.
-- Make authenticated day-based stats timezone-safe by using a single consistent “day identifier” approach shared between frontend and backend, so Counter and Stats screens agree on “today.”
-- Persist backend state for user profiles, per-day stats, and daily goals across canister upgrades using stable storage and upgrade hooks (adding a migration module only if required to preserve existing deployed data).
-- Adjust React Query cache/refetch handling so loading/refetch/error states are not shown as real “0” stats and errors surface appropriately instead of looking like resets.
+- Diagnose and correct guest-mode persistence so per-local-day Today totals/sets and daily goal are saved to and restored from local storage on app load/refresh/reopen.
+- Adjust authenticated-mode frontend state handling to avoid rendering 0/null as real values while identity and backend queries are still loading; show explicit loading and clear error states with a retry path.
+- Update the Motoko canister to persist required authenticated user state across upgrades using stable storage and upgrade hooks (profiles, per-user per-day totals/stats, and per-user daily goals).
 
-**User-visible outcome:** Logged reps/sets and daily goals reliably persist across refreshes and over time, “today” no longer resets mid-day due to timezone mismatches, Counter and Stats screens stay in sync for authenticated users, and authenticated data survives deployments/upgrades without loss.
+**User-visible outcome:** Guest users keep their current-day Today totals/sets and daily goal after refresh or reopening the browser, and signed-in users see their saved totals/goals reliably reappear after refresh (with proper loading/error UI) and remain intact across canister upgrades.

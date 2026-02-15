@@ -1,100 +1,63 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T19:12:36.129Z",
+  "generatedAt": "2026-02-15T20:01:04.115Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 4,
+    "total": 3,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-34",
-        "summary": "Investigate and fix the cause of user stats (today reps/sets and daily goal) appearing to reset unexpectedly, ensuring stats remain consistent across refreshes and over time for both authenticated (backend-synced) and unauthenticated (local-only) modes.",
+        "id": "REQ-39",
+        "summary": "Investigate and fix why a user’s logged sets/today totals and daily goal can appear to disappear after a page refresh or browser restart, and ensure values rehydrate correctly on app load for both unauthenticated (local-only) and authenticated (backend-synced) modes.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/dayStamp.ts",
-          "frontend/src/features/counter/useLocalTodayTally.ts",
-          "frontend/src/features/counter/useLocalDailyGoal.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/features/counter/CounterScreen.tsx",
           "frontend/src/features/stats/StatsView.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/dayStamp.ts",
-          "frontend/src/features/counter/useLocalTodayTally.ts",
-          "frontend/src/features/counter/useLocalDailyGoal.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/features/counter/CounterScreen.tsx",
           "frontend/src/features/stats/StatsView.tsx"
         ]
       },
       {
-        "id": "REQ-35",
-        "summary": "Update unauthenticated (local-only) persistence to use a stable 'local day' key (not UTC-based) so that local today reps/sets and local daily goal do not reset during the user’s local day due to UTC date changes.",
+        "id": "REQ-40",
+        "summary": "Update the frontend to avoid presenting transient loading states as real “reset” values for authenticated users on initial load/refresh (e.g., showing 0/null totals/goals while identity/actor/queries are initializing). Use explicit loading/placeholder UI until backend values are fetched or an error state is confirmed.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/dayStamp.ts",
-          "frontend/src/features/counter/useLocalTodayTally.ts",
-          "frontend/src/features/counter/useLocalDailyGoal.ts"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/features/counter/CounterScreen.tsx",
+          "frontend/src/features/stats/StatsView.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/dayStamp.ts",
-          "frontend/src/features/counter/useLocalTodayTally.ts",
-          "frontend/src/features/counter/useLocalDailyGoal.ts"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/features/counter/CounterScreen.tsx",
+          "frontend/src/features/stats/StatsView.tsx"
         ]
       },
       {
-        "id": "REQ-36",
-        "summary": "Make authenticated day-based stats calculations timezone-safe by ensuring the frontend and backend agree on what 'today' means. Implement and use a single consistent approach for computing the day identifier used to read/write daily stats so authenticated users do not see mid-day resets caused by UTC/local day boundary mismatches.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/utils/dayStamp.ts",
-          "frontend/src/features/stats/StatsView.tsx",
-          "frontend/src/features/counter/CounterScreen.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/utils/dayStamp.ts",
-          "frontend/src/features/stats/StatsView.tsx",
-          "frontend/src/features/counter/CounterScreen.tsx"
-        ]
-      },
-      {
-        "id": "REQ-37",
-        "summary": "Persist backend state for user profiles, per-user per-day stats, and per-user daily goals across canister upgrades by storing/restoring state using stable variables and appropriate upgrade hooks, so values do not reset after deployments/upgrades.",
+        "id": "REQ-41",
+        "summary": "Persist authenticated user data in the Motoko canister across upgrades by storing and restoring all required state in stable variables via upgrade hooks, including (at minimum) user profiles, per-user per-day stats/totals, and per-user daily goals.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
-      },
-      {
-        "id": "REQ-38",
-        "summary": "Ensure React Query cache invalidation/refetch behavior does not accidentally present 'reset' values (e.g., transient zeros) when identity/actor changes or queries refetch; loading/error states should not be misrepresented as real zero stats.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useActor.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/features/counter/CounterScreen.tsx",
-          "frontend/src/features/stats/StatsView.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/features/counter/CounterScreen.tsx",
-          "frontend/src/features/stats/StatsView.tsx"
-        ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/features/counter/CounterScreen.tsx",
-    "frontend/src/features/counter/useLocalDailyGoal.ts",
-    "frontend/src/features/counter/useLocalTodayTally.ts",
     "frontend/src/features/stats/StatsView.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/dayStamp.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

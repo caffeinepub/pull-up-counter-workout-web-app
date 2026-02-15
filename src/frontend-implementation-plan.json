@@ -1,117 +1,58 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Timezone-safe day tracking and resilient stats UI (frontend-only)",
+  "title": "Fix persistence + correct authenticated rehydration/loading states",
   "requirements": [
     {
-      "id": "REQ-34",
-      "summary": "Eliminate unexpected 'today' stats resets across refreshes by fixing day tracking logic and ensuring authenticated/unauthenticated modes compute and display today consistently.",
+      "id": "REQ-39",
+      "summary": "Ensure guest localStorage state and authenticated backend-synced state rehydrate correctly on app load/refresh so Today totals/sets and daily goal don’t appear to disappear.",
       "acceptanceCriteria": [
-        "Unauthenticated mode: after logging sets, refreshing the page does not reset today's reps/sets unexpectedly.",
-        "Authenticated mode: after logging sets, refreshing the page does not reset today's reps/sets unexpectedly.",
-        "If a reset occurs due to an actual day rollover, the rollover behavior is consistent and explainable (i.e., not triggered mid-day due to timezone/UTC mismatches)."
+        "As a guest (not signed in), after logging a set and/or setting a daily goal, refreshing the page preserves the same Today total/sets and goal for the current local day.",
+        "As a guest, closing the browser and reopening the app preserves the same Today total/sets and goal for the current local day.",
+        "As an authenticated user, after logging a set and/or setting a daily goal, refreshing the page preserves the same Today total and goal (no reverting to empty/zero as the final state).",
+        "The Stats screen reflects the same persisted values after refresh/reopen when viewing the current day."
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/utils/dayStamp.ts",
-          "operation": "modify",
-          "description": "Refactor day/date helpers so UI-facing date strings are based on the user's local day (not UTC), and so conversions used by the Stats screen are consistent with the chosen day semantics (e.g., avoid mixing UTC `toISOString()` date keys with local date selection)."
-        },
-        {
-          "path": "frontend/src/features/counter/useLocalTodayTally.ts",
-          "operation": "modify",
-          "description": "Fix local-only 'today' tally persistence to rely on a stable local-day key and to perform rollover checks without recreating the interval every state change (preventing inconsistent reloads that can look like resets)."
-        },
-        {
-          "path": "frontend/src/features/counter/useLocalDailyGoal.ts",
-          "operation": "modify",
-          "description": "Align local-only daily-goal persistence with the same stable local-day key used for today tallies to prevent unexpected mid-day rollovers."
-        },
-        {
-          "path": "frontend/src/features/stats/StatsView.tsx",
-          "operation": "modify",
-          "description": "Update 'Today' detection and selected-date initialization to use the local-day date string helper; ensure the 'Today' view always uses the authenticated 'today' backend reads and historical views use the selected day conversion consistently."
-        }
-      ]
-    },
-    {
-      "id": "REQ-35",
-      "summary": "Make unauthenticated (local-only) persistence use a stable local-day identifier so stats/goals do not roll over at UTC midnight.",
-      "acceptanceCriteria": [
-        "In a non-UTC timezone, local-only stats and local daily goal do not roll over until the device’s local date changes.",
-        "Local-only stats (reps and sets) and local daily goal persist correctly across page refreshes on the same local day."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/dayStamp.ts",
-          "operation": "modify",
-          "description": "Introduce/adjust a dedicated helper for a local-day date key (YYYY-MM-DD based on local time getters or an Intl formatter) and use it as the single source of truth for local persistence keys."
-        },
-        {
-          "path": "frontend/src/features/counter/useLocalTodayTally.ts",
-          "operation": "modify",
-          "description": "Replace UTC-based `toISOString().split('T')[0]` day keying with the new local-day key; ensure stored payload uses that key and that rollover only happens when the local-day key changes."
-        },
-        {
-          "path": "frontend/src/features/counter/useLocalDailyGoal.ts",
-          "operation": "modify",
-          "description": "Replace UTC-based day keying with the same local-day key used by `useLocalTodayTally`, so the local daily goal remains valid for the entire local day."
-        }
-      ]
-    },
-    {
-      "id": "REQ-36",
-      "summary": "Prevent authenticated mid-day resets by making 'today' and day selection timezone-safe and consistent across Counter and Stats views.",
-      "acceptanceCriteria": [
-        "Authenticated mode: logging a set increments the same 'today' bucket that is displayed on both the Counter and Stats screens, without unexpected resets during the user’s local day.",
-        "Stats screen: the 'Today' view matches what the Counter screen shows for authenticated users.",
-        "Historical day selection continues to work for authenticated users after the change (no regressions in selecting and viewing prior days)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/dayStamp.ts",
-          "operation": "modify",
-          "description": "Make date-string-to-day-stamp conversion and 'today date string' generation internally consistent so the Stats screen does not accidentally treat the user as being on a different day (avoiding selecting a different bucket than the backend 'today' reads)."
-        },
-        {
-          "path": "frontend/src/features/stats/StatsView.tsx",
-          "operation": "modify",
-          "description": "Ensure Stats 'Today' view is determined using the local-day helper and always uses the authenticated 'today' stats query for authenticated users; ensure historical selection uses the updated conversion method and continues to fetch prior days correctly."
-        },
-        {
-          "path": "frontend/src/features/counter/CounterScreen.tsx",
-          "operation": "modify",
-          "description": "Ensure authenticated 'today total' and 'daily goal' displays do not rely on UTC-derived local date keys, and remain consistent with StatsView's definition of 'today' (shared helper usage)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-38",
-      "summary": "Prevent React Query refetch/invalidation from presenting transient zero values as real stats; show loading/error states explicitly when authenticated data is not yet available.",
-      "acceptanceCriteria": [
-        "Authenticated mode: if stats queries are loading/refetching, the UI does not misleadingly present a reset-to-zero state as final data.",
-        "If a backend query fails (e.g., unauthorized), the UI surfaces an error state/message rather than silently showing 0 as if stats were reset."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useActor.ts",
-          "operation": "modify",
-          "description": "Adjust identity/actor-change query invalidation strategy to avoid forcing immediate UI-visible empty states (e.g., avoid aggressive refetch-all that drops displayed values before new data arrives), while still ensuring queries refresh after actor changes."
-        },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update stats/goal React Query hooks to better distinguish 'no data' vs 'loading' vs 'error' (e.g., set conservative retry behavior and keep prior data during refetch where appropriate), so UI can avoid rendering zeros as final values."
+          "description": "Update authenticated React Query hooks (today total, today stats, day stats, today goal) to expose actor-aware loading/ready state (e.g., treat “actor is initializing / query disabled” as loading, not as loaded-empty), and ensure callers can reliably distinguish between “not fetched yet” vs “fetched and empty (null)”. This supports correct rehydration without transient zero/blank render. Verify the selected authorization component’s frontend usage instructions before implementing."
         },
         {
           "path": "frontend/src/features/counter/CounterScreen.tsx",
           "operation": "modify",
-          "description": "Use query loading/error signals for authenticated totals/goals to render a clear loading state and/or error message instead of defaulting to 0 when data is temporarily unavailable."
+          "description": "Adjust authenticated-mode rendering so Today Total and Daily Goal derive from backend values only after the relevant queries have actually fetched; avoid mapping undefined/not-fetched states to 0/null. Keep guest mode using existing localStorage hooks so values rehydrate on refresh/restart for the current local day. Verify the selected authorization component’s frontend usage instructions before implementing."
         },
         {
           "path": "frontend/src/features/stats/StatsView.tsx",
           "operation": "modify",
-          "description": "Use query loading/error signals for authenticated today stats/day stats/goal to prevent misleading zero displays during refetch; render an explicit loading indicator and show an error message when backend reads fail."
+          "description": "Ensure authenticated-mode Stats for today (and goal progress) uses backend values only after queries are fetched; prevent transient 0/empty stats during actor/query initialization. Keep guest mode reading today’s values from localStorage-backed hooks to preserve refresh/restart persistence. Verify the selected authorization component’s frontend usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-40",
+      "summary": "Prevent transient authenticated loading states from appearing as real reset values; show explicit loading/placeholder UI and error-with-retry instead of 0/null while identity/actor/queries initialize.",
+      "acceptanceCriteria": [
+        "When authenticated, the Counter screen does not render Today’s Total as 0 solely because React Query data is not yet loaded; it shows a loading indicator/skeleton/placeholder until the query resolves or errors.",
+        "When authenticated, the Daily Goal input does not clear solely due to initialization/refetch; it remains in a loading state until the goal query resolves or errors.",
+        "If backend queries error, the UI shows an error state (not a 0-value state) and offers a clear retry path or instructions."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Standardize hook return shapes to include correct composite loading flags (actor initializing + query loading), fetched/ready flags, and access to refetch where needed so screens can render placeholders and provide a retry action rather than rendering zero-values. Verify the selected authorization component’s frontend usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/features/counter/CounterScreen.tsx",
+          "operation": "modify",
+          "description": "Replace any authenticated initial render paths that show 0/empty goal due to not-yet-fetched data with explicit loading placeholders. On query error, show an error state with a clear retry action (using the query refetch) rather than showing 0/null. Verify the selected authorization component’s frontend usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/features/stats/StatsView.tsx",
+          "operation": "modify",
+          "description": "Ensure authenticated stats and goal progress do not render 0/empty during initialization; show loading placeholders until fetched, and on error show an explicit error state with a retry action (using query refetch) instead of a 0-value UI. Verify the selected authorization component’s frontend usage instructions before implementing."
         }
       ]
     }

@@ -2,72 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-investigate-and-fix-the-cause-of-user-stats-today-reps-sets-and-daily-goal-appearing-to-reset-unexpectedly-ensuring-stats-remain-consistent-across-refreshes-and-over-time-for-both-authenticated-backend-synced-and-unauthenticated-local-only-modes",
-      "featureTitle": "Investigate and fix the cause of user stats (today reps/sets and daily goal) appearing to reset unexpectedly, ensuring stats remain consistent across refreshes and over time for both authenticated (backend-synced) and unauthenticated (local-only) modes.",
-      "files": [
-        "frontend/src/features/counter/useLocalDailyGoal.ts",
-        "frontend/src/features/counter/useLocalTodayTally.ts",
-        "frontend/src/features/stats/StatsView.tsx",
-        "frontend/src/utils/dayStamp.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-34"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-unauthenticated-local-only-persistence-to-use-a-stable-local-day-key-not-utc-based-so-that-local-today-reps-sets-and-local-daily-goal-do-not-reset-during-the-user-s-local-day-due-to-utc-date-changes",
-      "featureTitle": "Update unauthenticated (local-only) persistence to use a stable 'local day' key (not UTC-based) so that local today reps/sets and local daily goal do not reset during the user’s local day due to UTC date changes.",
-      "files": [
-        "frontend/src/features/counter/useLocalDailyGoal.ts",
-        "frontend/src/features/counter/useLocalTodayTally.ts",
-        "frontend/src/utils/dayStamp.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-35"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-make-authenticated-day-based-stats-calculations-timezone-safe-by-ensuring-the-frontend-and-backend-agree-on-what-today-means-implement-and-use-a-single-consistent-approach-for-computing-the-day-identifier-used-to-read-write-daily-stats-so-authenticated-users-do-not-see-mid-day-resets-caused-by-utc-local-day-boundary-mismatches",
-      "featureTitle": "Make authenticated day-based stats calculations timezone-safe by ensuring the frontend and backend agree on what 'today' means. Implement and use a single consistent approach for computing the day identifier used to read/write daily stats so authenticated users do not see mid-day resets caused by UTC/local day boundary mismatches.",
-      "files": [
-        "frontend/src/features/counter/CounterScreen.tsx",
-        "frontend/src/features/stats/StatsView.tsx",
-        "frontend/src/utils/dayStamp.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-36"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-react-query-cache-invalidation-refetch-behavior-does-not-accidentally-present-reset-values-e-g-transient-zeros-when-identity-actor-changes-or-queries-refetch-loading-error-states-should-not-be-misrepresented-as-real-zero-stats",
-      "featureTitle": "Ensure React Query cache invalidation/refetch behavior does not accidentally present 'reset' values (e.g., transient zeros) when identity/actor changes or queries refetch; loading/error states should not be misrepresented as real zero stats.",
+      "featureId": "feature-investigate-and-fix-why-a-user-s-logged-sets-today-totals-and-daily-goal-can-appear-to-disappear-after-a-page-refresh-or-browser-restart-and-ensure-values-rehydrate-correctly-on-app-load-for-both-unauthenticated-local-only-and-authenticated-backend-synced-modes",
+      "featureTitle": "Investigate and fix why a user’s logged sets/today totals and daily goal can appear to disappear after a page refresh or browser restart, and ensure values rehydrate correctly on app load for both unauthenticated (local-only) and authenticated (backend-synced) modes.",
       "files": [
         "frontend/src/features/counter/CounterScreen.tsx",
         "frontend/src/features/stats/StatsView.tsx",
@@ -82,7 +18,28 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-38"
+        "REQ-39"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-frontend-to-avoid-presenting-transient-loading-states-as-real-reset-values-for-authenticated-users-on-initial-load-refresh-e-g-showing-0-null-totals-goals-while-identity-actor-queries-are-initializing-use-explicit-loading-placeholder-ui-until-backend-values-are-fetched-or-an-error-state-is-confirmed",
+      "featureTitle": "Update the frontend to avoid presenting transient loading states as real “reset” values for authenticated users on initial load/refresh (e.g., showing 0/null totals/goals while identity/actor/queries are initializing). Use explicit loading/placeholder UI until backend values are fetched or an error state is confirmed.",
+      "files": [
+        "frontend/src/features/counter/CounterScreen.tsx",
+        "frontend/src/features/stats/StatsView.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-40"
       ],
       "confidence": "high"
     }

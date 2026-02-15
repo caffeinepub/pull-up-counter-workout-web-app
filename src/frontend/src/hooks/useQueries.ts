@@ -39,71 +39,95 @@ export function useSaveCallerUserProfile() {
 }
 
 export function useGetTodayTotal() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
 
-  return useQuery<bigint | null>({
+  const query = useQuery<bigint | null>({
     queryKey: ['todayTotal'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.getTodayTotal(null);
     },
-    enabled: !!actor && !isFetching && isAuthenticated,
+    enabled: !!actor && !actorFetching && isAuthenticated,
     retry: 2,
     retryDelay: 1000,
   });
+
+  return {
+    ...query,
+    isLoading: (actorFetching || query.isLoading) && isAuthenticated,
+    isFetched: !!actor && query.isFetched && isAuthenticated,
+  };
 }
 
 export function useGetTodayStats() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
 
-  return useQuery<DayStats | null>({
+  const query = useQuery<DayStats | null>({
     queryKey: ['todayStats'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.getTodayStats(null);
     },
-    enabled: !!actor && !isFetching && isAuthenticated,
+    enabled: !!actor && !actorFetching && isAuthenticated,
     retry: 2,
     retryDelay: 1000,
   });
+
+  return {
+    ...query,
+    isLoading: (actorFetching || query.isLoading) && isAuthenticated,
+    isFetched: !!actor && query.isFetched && isAuthenticated,
+  };
 }
 
 export function useGetDayStats(dayStamp: bigint | null) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
 
-  return useQuery<DayStats | null>({
+  const query = useQuery<DayStats | null>({
     queryKey: ['dayStats', dayStamp?.toString()],
     queryFn: async () => {
       if (!actor || dayStamp === null) throw new Error('Actor or dayStamp not available');
       return actor.getDayStats(dayStamp);
     },
-    enabled: !!actor && !isFetching && isAuthenticated && dayStamp !== null,
+    enabled: !!actor && !actorFetching && isAuthenticated && dayStamp !== null,
     retry: 2,
     retryDelay: 1000,
   });
+
+  return {
+    ...query,
+    isLoading: (actorFetching || query.isLoading) && isAuthenticated,
+    isFetched: !!actor && query.isFetched && isAuthenticated,
+  };
 }
 
 export function useGetTodayGoal() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
 
-  return useQuery<DailyGoal | null>({
+  const query = useQuery<DailyGoal | null>({
     queryKey: ['todayGoal'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.getTodayGoal(null);
     },
-    enabled: !!actor && !isFetching && isAuthenticated,
+    enabled: !!actor && !actorFetching && isAuthenticated,
     retry: 2,
     retryDelay: 1000,
   });
+
+  return {
+    ...query,
+    isLoading: (actorFetching || query.isLoading) && isAuthenticated,
+    isFetched: !!actor && query.isFetched && isAuthenticated,
+  };
 }
 
 export function useSetTodayGoal() {

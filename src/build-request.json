@@ -1,107 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Fix stats resetting by making day tracking timezone-safe and persisting backend state across upgrades",
+  "title": "Fix data persistence across refresh/browser restart (guest localStorage + authenticated backend state)",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-34",
-      "text": "Investigate and fix the cause of user stats (today reps/sets and daily goal) appearing to reset unexpectedly, ensuring stats remain consistent across refreshes and over time for both authenticated (backend-synced) and unauthenticated (local-only) modes.",
+      "id": "REQ-39",
+      "text": "Investigate and fix why a user’s logged sets/today totals and daily goal can appear to disappear after a page refresh or browser restart, and ensure values rehydrate correctly on app load for both unauthenticated (local-only) and authenticated (backend-synced) modes.",
       "target": "both",
       "source": {
         "messageIds": [
           "msg-6"
         ],
         "quotes": [
-          "doesn't seem to be keeping my stats? keeps resetting itself or something."
+          "data doesn't seem persistent. when I refresh the page or close the browser, its gone"
         ]
       },
       "acceptanceCriteria": [
-        "Unauthenticated mode: after logging sets, refreshing the page does not reset today's reps/sets unexpectedly.",
-        "Authenticated mode: after logging sets, refreshing the page does not reset today's reps/sets unexpectedly.",
-        "If a reset occurs due to an actual day rollover, the rollover behavior is consistent and explainable (i.e., not triggered mid-day due to timezone/UTC mismatches)."
+        "As a guest (not signed in), after logging a set and/or setting a daily goal, refreshing the page preserves the same Today total/sets and goal for the current local day.",
+        "As a guest, closing the browser and reopening the app preserves the same Today total/sets and goal for the current local day.",
+        "As an authenticated user, after logging a set and/or setting a daily goal, refreshing the page preserves the same Today total and goal (no reverting to empty/zero as the final state).",
+        "The Stats screen reflects the same persisted values after refresh/reopen when viewing the current day."
       ]
     },
     {
-      "id": "REQ-35",
-      "text": "Update unauthenticated (local-only) persistence to use a stable 'local day' key (not UTC-based) so that local today reps/sets and local daily goal do not reset during the user’s local day due to UTC date changes.",
+      "id": "REQ-40",
+      "text": "Update the frontend to avoid presenting transient loading states as real “reset” values for authenticated users on initial load/refresh (e.g., showing 0/null totals/goals while identity/actor/queries are initializing). Use explicit loading/placeholder UI until backend values are fetched or an error state is confirmed.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-6"
         ],
         "quotes": [
-          "doesn't seem to be keeping my stats? keeps resetting itself or something."
+          "when I refresh the page ... its gone"
         ]
       },
       "acceptanceCriteria": [
-        "In a non-UTC timezone, local-only stats and local daily goal do not roll over until the device’s local date changes.",
-        "Local-only stats (reps and sets) and local daily goal persist correctly across page refreshes on the same local day."
+        "When authenticated, the Counter screen does not render Today’s Total as 0 solely because React Query data is not yet loaded; it shows a loading indicator/skeleton/placeholder until the query resolves or errors.",
+        "When authenticated, the Daily Goal input does not clear solely due to initialization/refetch; it remains in a loading state until the goal query resolves or errors.",
+        "If backend queries error, the UI shows an error state (not a 0-value state) and offers a clear retry path or instructions."
       ]
     },
     {
-      "id": "REQ-36",
-      "text": "Make authenticated day-based stats calculations timezone-safe by ensuring the frontend and backend agree on what 'today' means. Implement and use a single consistent approach for computing the day identifier used to read/write daily stats so authenticated users do not see mid-day resets caused by UTC/local day boundary mismatches.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "doesn't seem to be keeping my stats? keeps resetting itself or something."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Authenticated mode: logging a set increments the same 'today' bucket that is displayed on both the Counter and Stats screens, without unexpected resets during the user’s local day.",
-        "Stats screen: the 'Today' view matches what the Counter screen shows for authenticated users.",
-        "Historical day selection continues to work for authenticated users after the change (no regressions in selecting and viewing prior days)."
-      ]
-    },
-    {
-      "id": "REQ-37",
-      "text": "Persist backend state for user profiles, per-user per-day stats, and per-user daily goals across canister upgrades by storing/restoring state using stable variables and appropriate upgrade hooks, so values do not reset after deployments/upgrades.",
+      "id": "REQ-41",
+      "text": "Persist authenticated user data in the Motoko canister across upgrades by storing and restoring all required state in stable variables via upgrade hooks, including (at minimum) user profiles, per-user per-day stats/totals, and per-user daily goals.",
       "target": "backend",
       "source": {
         "messageIds": [
           "msg-6"
         ],
         "quotes": [
-          "doesn't seem to be keeping my stats? keeps resetting itself or something."
+          "when I refresh the page or close the browser, its gone"
         ]
       },
       "acceptanceCriteria": [
-        "After a canister upgrade, previously recorded authenticated user daily stats (reps/sets) remain available.",
-        "After a canister upgrade, previously saved authenticated user daily goal remains available (for the applicable day semantics used by the app).",
-        "No data loss occurs for existing users’ stored stats/goals during upgrade in normal operation."
-      ]
-    },
-    {
-      "id": "REQ-38",
-      "text": "Ensure React Query cache invalidation/refetch behavior does not accidentally present 'reset' values (e.g., transient zeros) when identity/actor changes or queries refetch; loading/error states should not be misrepresented as real zero stats.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "doesn't seem to be keeping my stats? keeps resetting itself or something."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Authenticated mode: if stats queries are loading/refetching, the UI does not misleadingly present a reset-to-zero state as final data.",
-        "If a backend query fails (e.g., unauthorized), the UI surfaces an error state/message rather than silently showing 0 as if stats were reset."
+        "After an authenticated user logs sets and sets a daily goal, those values remain available after a canister upgrade/redeploy (no data loss).",
+        "Backend read APIs (e.g., getTodayStats/getTodayTotal/getDayStats/getTodayGoal) return the previously stored values after upgrade.",
+        "Backend write APIs (e.g., incrementTodayTotal/setTodayGoal/saveCallerUserProfile) continue to work after upgrade without requiring manual resets."
       ]
     }
   ],
   "constraints": [
-    "Respect the single-actor backend architecture (all Motoko logic stays in backend/main.mo).",
-    "Only add backend/migration.mo if a state upgrade/migration is required to preserve existing deployed data.",
-    "Do not modify files under frontend/src/components/ui or any other frontend immutable paths listed in SYSTEM_CONTEXT.",
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit files under frontend/src/components/ui or other frontend immutable paths listed in SYSTEM_CONTEXT.",
     "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Adding new tabs/screens beyond the existing Counter and Stats routes.",
-    "Reintroducing session-based workout history or 7-day trend UI/features.",
-    "Adding third-party analytics, external databases, or non-Internet-Identity authentication."
+    "Adding new product features unrelated to persistence (e.g., new workout modes, new tabs, new charts).",
+    "Introducing external databases or third-party storage providers."
   ],
   "imageRequirements": {
     "required": [],

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 17,
+  "projectStateVersion": 19,
   "summary": "Build a pull-up counter web app focused on a day-based running tally (“Today” total) across multiple sets, without the workout session start/end + saved session history flow.",
   "architectural_notes": [
     "Introduce a dedicated Stats tab for daily/day-focused stats; adjust navigation/routing accordingly.",
@@ -10,7 +10,8 @@
   "known_issues": [
     "Logging appears to be broken (sets/reps not being recorded/updated correctly); investigate and fix.",
     "Daily target goal is not tracking/updating correctly on the Counter (front) page.",
-    "Stats are not being persisted reliably (appear to reset / not keep values across refreshes or over time); investigate persistence and day-change/reset logic."
+    "Stats are not being persisted reliably (appear to reset / not keep values across refreshes or over time); investigate persistence and day-change/reset logic.",
+    "User data (today totals/stats) is not persisting across page refreshes or browser restarts; values disappear after refresh/close."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -269,6 +270,22 @@
         "REQ-38"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-investigate-and-fix-why-a-user-s-logged-sets-today-totals-and-daily-goal-can-appear-to-disappear-after-a-page-refresh-or-browser-restart-and-ensure-values-rehydrate-correctly-on-app-load-for-both-unauthenticated-local-only-and-authenticated-backend-synced-modes",
+      "title": "Investigate and fix why a user’s logged sets/today totals and daily goal can appear to disappear after a page refresh or browser restart, and ensure values rehydrate correctly on app load for both unauthenticated (local-only) and authenticated (backend-synced) modes.",
+      "reqIds": [
+        "REQ-39"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-frontend-to-avoid-presenting-transient-loading-states-as-real-reset-values-for-authenticated-users-on-initial-load-refresh-e-g-showing-0-null-totals-goals-while-identity-actor-queries-are-initializing-use-explicit-loading-placeholder-ui-until-backend-values-are-fetched-or-an-error-state-is-confirmed",
+      "title": "Update the frontend to avoid presenting transient loading states as real “reset” values for authenticated users on initial load/refresh (e.g., showing 0/null totals/goals while identity/actor/queries are initializing). Use explicit loading/placeholder UI until backend values are fetched or an error state is confirmed.",
+      "reqIds": [
+        "REQ-40"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -363,6 +380,14 @@
       "summary": "Persist backend state for user profiles, per-user per-day stats, and per-user daily goals across canister upgrades by storing/restoring state using stable variables and appropriate upgrade hooks, so values do not reset after deployments/upgrades.",
       "reqIds": [
         "REQ-37"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-29",
+      "summary": "Persist authenticated user data in the Motoko canister across upgrades by storing and restoring all required state in stable variables via upgrade hooks, including (at minimum) user profiles, per-user per-day stats/totals, and per-user daily goals.",
+      "reqIds": [
+        "REQ-41"
       ],
       "status": "pending"
     }

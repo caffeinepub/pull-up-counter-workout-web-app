@@ -27,7 +27,9 @@ export default function CounterScreen() {
   const { 
     data: backendTodayTotal, 
     isLoading: todayTotalLoading, 
-    isError: todayTotalError 
+    isFetched: todayTotalFetched,
+    isError: todayTotalError,
+    refetch: refetchTodayTotal
   } = useGetTodayTotal();
   
   // Local goal for unauthenticated users
@@ -37,24 +39,28 @@ export default function CounterScreen() {
   const { 
     data: backendGoalData, 
     isLoading: goalLoading, 
-    isError: goalQueryError 
+    isFetched: goalFetched,
+    isError: goalQueryError,
+    refetch: refetchGoal
   } = useGetTodayGoal();
   const setBackendGoal = useSetTodayGoal();
 
-  // Determine which goal to use
+  // Determine which goal to use - only use backend data if fetched
   const dailyGoal = isAuthenticated 
-    ? (backendGoalData ? Number(backendGoalData) : null)
+    ? (goalFetched ? (backendGoalData ? Number(backendGoalData) : null) : null)
     : localDailyGoal;
 
   // Draft state for goal input (not yet confirmed)
   const [goalDraft, setGoalDraft] = useState<string>('');
   const [goalValidationError, setGoalValidationError] = useState<string>('');
 
-  // Sync goalDraft with dailyGoal when it changes
+  // Sync goalDraft with dailyGoal when it changes and is loaded
   useEffect(() => {
-    setGoalDraft(dailyGoal !== null ? String(dailyGoal) : '');
-    setGoalValidationError('');
-  }, [dailyGoal]);
+    if (!isAuthenticated || goalFetched) {
+      setGoalDraft(dailyGoal !== null ? String(dailyGoal) : '');
+      setGoalValidationError('');
+    }
+  }, [dailyGoal, isAuthenticated, goalFetched]);
 
   const incrementRepsCount = () => setReps((prev) => prev + 1);
   const decrementRepsCount = () => setReps((prev) => Math.max(0, prev - 1));
@@ -145,9 +151,9 @@ export default function CounterScreen() {
     }
   };
 
-  // Calculate today's total reps for progress
+  // Calculate today's total reps for progress - only use backend data if fetched
   const todayTotalReps = isAuthenticated 
-    ? (backendTodayTotal ? Number(backendTodayTotal) : 0)
+    ? (todayTotalFetched ? (backendTodayTotal ? Number(backendTodayTotal) : 0) : 0)
     : localTodayReps;
   
   const progressPercentage = dailyGoal && dailyGoal > 0 ? Math.min((todayTotalReps / dailyGoal) * 100, 100) : 0;
@@ -240,15 +246,27 @@ export default function CounterScreen() {
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoadingData ? (
-            <div className="flex items-center justify-center py-4">
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading your stats...</p>
             </div>
           ) : todayTotalError ? (
-            <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg text-sm">
-              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
-              <p className="text-destructive">
-                Failed to load today's total. Please try again.
-              </p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg text-sm">
+                <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                <p className="text-destructive">
+                  Failed to load today's total. Please try again.
+                </p>
+              </div>
+              <Button
+                onClick={() => refetchTodayTotal()}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Retry
+              </Button>
             </div>
           ) : (
             <>
@@ -297,8 +315,27 @@ export default function CounterScreen() {
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoadingData ? (
-            <div className="flex items-center justify-center py-4">
+            <div className="flex flex-col items-center justify-center py-6 gap-3">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading goal...</p>
+            </div>
+          ) : goalQueryError ? (
+            <div className="space-y-3">
+              <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg text-sm">
+                <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                <p className="text-destructive">
+                  Failed to load daily goal. Please try again.
+                </p>
+              </div>
+              <Button
+                onClick={() => refetchGoal()}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Retry
+              </Button>
             </div>
           ) : (
             <>
