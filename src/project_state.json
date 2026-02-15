@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 15,
+  "projectStateVersion": 17,
   "summary": "Build a pull-up counter web app focused on a day-based running tally (“Today” total) across multiple sets, without the workout session start/end + saved session history flow.",
   "architectural_notes": [
     "Introduce a dedicated Stats tab for daily/day-focused stats; adjust navigation/routing accordingly.",
@@ -9,7 +9,8 @@
   ],
   "known_issues": [
     "Logging appears to be broken (sets/reps not being recorded/updated correctly); investigate and fix.",
-    "Daily target goal is not tracking/updating correctly on the Counter (front) page."
+    "Daily target goal is not tracking/updating correctly on the Counter (front) page.",
+    "Stats are not being persisted reliably (appear to reset / not keep values across refreshes or over time); investigate persistence and day-change/reset logic."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -236,6 +237,38 @@
         "REQ-33"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-investigate-and-fix-the-cause-of-user-stats-today-reps-sets-and-daily-goal-appearing-to-reset-unexpectedly-ensuring-stats-remain-consistent-across-refreshes-and-over-time-for-both-authenticated-backend-synced-and-unauthenticated-local-only-modes",
+      "title": "Investigate and fix the cause of user stats (today reps/sets and daily goal) appearing to reset unexpectedly, ensuring stats remain consistent across refreshes and over time for both authenticated (backend-synced) and unauthenticated (local-only) modes.",
+      "reqIds": [
+        "REQ-34"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-unauthenticated-local-only-persistence-to-use-a-stable-local-day-key-not-utc-based-so-that-local-today-reps-sets-and-local-daily-goal-do-not-reset-during-the-user-s-local-day-due-to-utc-date-changes",
+      "title": "Update unauthenticated (local-only) persistence to use a stable 'local day' key (not UTC-based) so that local today reps/sets and local daily goal do not reset during the user’s local day due to UTC date changes.",
+      "reqIds": [
+        "REQ-35"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-authenticated-day-based-stats-calculations-timezone-safe-by-ensuring-the-frontend-and-backend-agree-on-what-today-means-implement-and-use-a-single-consistent-approach-for-computing-the-day-identifier-used-to-read-write-daily-stats-so-authenticated-users-do-not-see-mid-day-resets-caused-by-utc-local-day-boundary-mismatches",
+      "title": "Make authenticated day-based stats calculations timezone-safe by ensuring the frontend and backend agree on what 'today' means. Implement and use a single consistent approach for computing the day identifier used to read/write daily stats so authenticated users do not see mid-day resets caused by UTC/local day boundary mismatches.",
+      "reqIds": [
+        "REQ-36"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-react-query-cache-invalidation-refetch-behavior-does-not-accidentally-present-reset-values-e-g-transient-zeros-when-identity-actor-changes-or-queries-refetch-loading-error-states-should-not-be-misrepresented-as-real-zero-stats",
+      "title": "Ensure React Query cache invalidation/refetch behavior does not accidentally present 'reset' values (e.g., transient zeros) when identity/actor changes or queries refetch; loading/error states should not be misrepresented as real zero stats.",
+      "reqIds": [
+        "REQ-38"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -323,6 +356,14 @@
       "id": "AR-22",
       "summary": "Add an explicit confirm/save button for setting the daily target goal (instead of auto-applying immediately).",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-26",
+      "summary": "Persist backend state for user profiles, per-user per-day stats, and per-user daily goals across canister upgrades by storing/restoring state using stable variables and appropriate upgrade hooks, so values do not reset after deployments/upgrades.",
+      "reqIds": [
+        "REQ-37"
+      ],
       "status": "pending"
     }
   ],

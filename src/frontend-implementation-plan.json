@@ -1,87 +1,117 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix Counter goal tracking, add confirm-save for daily target, and add day selector to Stats",
+  "title": "Timezone-safe day tracking and resilient stats UI (frontend-only)",
   "requirements": [
     {
-      "id": "REQ-30",
-      "summary": "Make Counter screen goal progress use the authenticated user’s backend Today reps total and update live after logging sets, while preserving local behavior for guests.",
+      "id": "REQ-34",
+      "summary": "Eliminate unexpected 'today' stats resets across refreshes by fixing day tracking logic and ensuring authenticated/unauthenticated modes compute and display today consistently.",
       "acceptanceCriteria": [
-        "When signed in and a daily target goal is set, the Counter screen’s \"Today's Progress\" displays the authenticated user’s current Today reps total (from backend) instead of 0.",
-        "After logging a set while signed in, the Counter screen’s goal progress (numerator and progress bar) updates to reflect the new Today reps total without requiring a full page refresh.",
-        "When not signed in, the Counter screen continues using local Today reps for the goal progress as before."
+        "Unauthenticated mode: after logging sets, refreshing the page does not reset today's reps/sets unexpectedly.",
+        "Authenticated mode: after logging sets, refreshing the page does not reset today's reps/sets unexpectedly.",
+        "If a reset occurs due to an actual day rollover, the rollover behavior is consistent and explainable (i.e., not triggered mid-day due to timezone/UTC mismatches)."
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/features/counter/CounterScreen.tsx",
-          "operation": "modify",
-          "description": "Update CounterScreen to read authenticated Today reps via the existing React Query hook (useGetTodayTotal) and use it for \"Today's Progress\" numerator/progress bar instead of hardcoded 0; ensure the UI reacts to query updates after useIncrementTodayTotal completes. Use the existing authentication state from the authorization component flow (useInternetIdentity/useActor) to branch authenticated vs guest behavior. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Ensure mutations that log sets trigger UI refresh for Counter goal progress by invalidating/refetching the Today total query used on Counter (and keep Today stats invalidation intact). Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-31",
-      "summary": "Change Counter daily target editing to a draft-and-confirm flow with validation, disabled/loading Confirm state, and preserved Clear behavior for both authenticated and guest users.",
-      "acceptanceCriteria": [
-        "Editing the daily target input does not persist changes to backend (authenticated) or localStorage (unauthenticated) until the user clicks a \"Confirm\" button.",
-        "The Confirm button is disabled when the input is unchanged from the currently-applied daily goal, and shows a loading/disabled state while the save mutation is in progress for authenticated users.",
-        "Invalid input (non-numeric or negative) is rejected with an English error message and does not update the stored goal.",
-        "The existing \"Clear\" behavior remains available and clears the goal (authenticated: set to 0 per current backend contract; unauthenticated: clears local goal)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/features/counter/CounterScreen.tsx",
-          "operation": "modify",
-          "description": "Replace auto-save-on-blur/Enter goal persistence with an explicit \"Confirm\" button that applies the draft goal only when clicked; implement draft state vs applied goal comparison to disable Confirm when unchanged; show loading/disabled state on Confirm while authenticated save is in progress; validate input (numeric, non-negative) and show English error messaging; keep existing Clear behavior (auth: setTodayGoal(0); guest: clear local goal). Use existing auth branching via the authorization component flow (useInternetIdentity/useActor). Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-32",
-      "summary": "Add an in-Stats date selector to view stats for a selected day for signed-in users, with sensible guest behavior and clear no-data handling.",
-      "acceptanceCriteria": [
-        "The Stats screen includes a date selector (calendar UI or date input) with a visible currently selected date.",
-        "When signed in, changing the selected date updates the displayed stats to those for the selected day (Total Reps, Sets Logged, Avg Reps/Set).",
-        "If there are no stats for a selected day, the UI shows zeros (or a clear \"No data for this day\" message) in English without throwing errors.",
-        "When not signed in, the Stats screen does not attempt to fetch historical days from the backend; it either limits viewing to today’s local stats or displays an English sign-in prompt for viewing prior days."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/features/stats/StatsView.tsx",
-          "operation": "modify",
-          "description": "Add a native date input selector (no third-party calendar library) with a visible selected date; compute a selected day identifier and, when authenticated (authorization component flow), render stats for that selected day; provide English no-data behavior (zeros and/or \"No data for this day\") when backend returns null; when unauthenticated, prevent historical fetch attempts and either constrain selection to today or show an English prompt indicating sign-in is required to view prior days. Verify the component's usage instructions before implementing."
-        },
         {
           "path": "frontend/src/utils/dayStamp.ts",
-          "operation": "create",
-          "description": "Add a small date utility to convert between a YYYY-MM-DD date string (from the date input) and the day-based bigint identifier expected by existing day-based stats queries; also include helpers for determining today's date key. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-33",
-      "summary": "Extend React Query hooks to fetch day stats for an arbitrary selected date and wire StatsView to use correct cache keys and refresh behavior.",
-      "acceptanceCriteria": [
-        "Frontend includes a new query hook (or an extension of an existing hook) that fetches day stats given a selected date/day identifier, and uses a queryKey that includes the selected date/day so caching works correctly.",
-        "The backend exposes (or reuses) an authenticated query that allows retrieving stats for a specific day (not only today), and the frontend uses it when signed in.",
-        "No changes are made to immutable frontend paths listed in SYSTEM_CONTEXT.",
-        "After logging a set for today, the Stats screen still updates today’s stats correctly; selecting today in the calendar reflects the updated values."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add a React Query hook for fetching stats for a specified day identifier using the existing backend day-based stats query capability; ensure the queryKey includes the selected day identifier for correct caching; keep queries disabled when not authenticated. Also update relevant mutations to invalidate/refetch day-stats queries when today's data changes so selecting today reflects newly logged sets. Verify the component's usage instructions before implementing."
+          "description": "Refactor day/date helpers so UI-facing date strings are based on the user's local day (not UTC), and so conversions used by the Stats screen are consistent with the chosen day semantics (e.g., avoid mixing UTC `toISOString()` date keys with local date selection)."
+        },
+        {
+          "path": "frontend/src/features/counter/useLocalTodayTally.ts",
+          "operation": "modify",
+          "description": "Fix local-only 'today' tally persistence to rely on a stable local-day key and to perform rollover checks without recreating the interval every state change (preventing inconsistent reloads that can look like resets)."
+        },
+        {
+          "path": "frontend/src/features/counter/useLocalDailyGoal.ts",
+          "operation": "modify",
+          "description": "Align local-only daily-goal persistence with the same stable local-day key used for today tallies to prevent unexpected mid-day rollovers."
         },
         {
           "path": "frontend/src/features/stats/StatsView.tsx",
           "operation": "modify",
-          "description": "Wire the new/extended day-stats query hook into StatsView so changing the selected date updates displayed stats; ensure selecting today stays consistent with today refresh behavior after logging sets (either by using today-specific hooks for today or by ensuring invalidation covers the selected-day query). Use existing auth detection from the authorization component flow to decide when to run the day query. Verify the component's usage instructions before implementing."
+          "description": "Update 'Today' detection and selected-date initialization to use the local-day date string helper; ensure the 'Today' view always uses the authenticated 'today' backend reads and historical views use the selected day conversion consistently."
+        }
+      ]
+    },
+    {
+      "id": "REQ-35",
+      "summary": "Make unauthenticated (local-only) persistence use a stable local-day identifier so stats/goals do not roll over at UTC midnight.",
+      "acceptanceCriteria": [
+        "In a non-UTC timezone, local-only stats and local daily goal do not roll over until the device’s local date changes.",
+        "Local-only stats (reps and sets) and local daily goal persist correctly across page refreshes on the same local day."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/dayStamp.ts",
+          "operation": "modify",
+          "description": "Introduce/adjust a dedicated helper for a local-day date key (YYYY-MM-DD based on local time getters or an Intl formatter) and use it as the single source of truth for local persistence keys."
+        },
+        {
+          "path": "frontend/src/features/counter/useLocalTodayTally.ts",
+          "operation": "modify",
+          "description": "Replace UTC-based `toISOString().split('T')[0]` day keying with the new local-day key; ensure stored payload uses that key and that rollover only happens when the local-day key changes."
+        },
+        {
+          "path": "frontend/src/features/counter/useLocalDailyGoal.ts",
+          "operation": "modify",
+          "description": "Replace UTC-based day keying with the same local-day key used by `useLocalTodayTally`, so the local daily goal remains valid for the entire local day."
+        }
+      ]
+    },
+    {
+      "id": "REQ-36",
+      "summary": "Prevent authenticated mid-day resets by making 'today' and day selection timezone-safe and consistent across Counter and Stats views.",
+      "acceptanceCriteria": [
+        "Authenticated mode: logging a set increments the same 'today' bucket that is displayed on both the Counter and Stats screens, without unexpected resets during the user’s local day.",
+        "Stats screen: the 'Today' view matches what the Counter screen shows for authenticated users.",
+        "Historical day selection continues to work for authenticated users after the change (no regressions in selecting and viewing prior days)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/dayStamp.ts",
+          "operation": "modify",
+          "description": "Make date-string-to-day-stamp conversion and 'today date string' generation internally consistent so the Stats screen does not accidentally treat the user as being on a different day (avoiding selecting a different bucket than the backend 'today' reads)."
+        },
+        {
+          "path": "frontend/src/features/stats/StatsView.tsx",
+          "operation": "modify",
+          "description": "Ensure Stats 'Today' view is determined using the local-day helper and always uses the authenticated 'today' stats query for authenticated users; ensure historical selection uses the updated conversion method and continues to fetch prior days correctly."
+        },
+        {
+          "path": "frontend/src/features/counter/CounterScreen.tsx",
+          "operation": "modify",
+          "description": "Ensure authenticated 'today total' and 'daily goal' displays do not rely on UTC-derived local date keys, and remain consistent with StatsView's definition of 'today' (shared helper usage)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-38",
+      "summary": "Prevent React Query refetch/invalidation from presenting transient zero values as real stats; show loading/error states explicitly when authenticated data is not yet available.",
+      "acceptanceCriteria": [
+        "Authenticated mode: if stats queries are loading/refetching, the UI does not misleadingly present a reset-to-zero state as final data.",
+        "If a backend query fails (e.g., unauthorized), the UI surfaces an error state/message rather than silently showing 0 as if stats were reset."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Adjust identity/actor-change query invalidation strategy to avoid forcing immediate UI-visible empty states (e.g., avoid aggressive refetch-all that drops displayed values before new data arrives), while still ensuring queries refresh after actor changes."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Update stats/goal React Query hooks to better distinguish 'no data' vs 'loading' vs 'error' (e.g., set conservative retry behavior and keep prior data during refetch where appropriate), so UI can avoid rendering zeros as final values."
+        },
+        {
+          "path": "frontend/src/features/counter/CounterScreen.tsx",
+          "operation": "modify",
+          "description": "Use query loading/error signals for authenticated totals/goals to render a clear loading state and/or error message instead of defaulting to 0 when data is temporarily unavailable."
+        },
+        {
+          "path": "frontend/src/features/stats/StatsView.tsx",
+          "operation": "modify",
+          "description": "Use query loading/error signals for authenticated today stats/day stats/goal to prevent misleading zero displays during refetch; render an explicit loading indicator and show an error message when backend reads fail."
         }
       ]
     }

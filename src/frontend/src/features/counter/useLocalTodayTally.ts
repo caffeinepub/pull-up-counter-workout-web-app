@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { getLocalDayKey } from '../../utils/dayStamp';
 
 const STORAGE_KEY = 'pullup_today_tally';
 
@@ -8,17 +9,13 @@ interface TodayTallyData {
   sets: number;
 }
 
-function getTodayDateKey(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
 function loadTodayTally(): { reps: number; sets: number } {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return { reps: 0, sets: 0 };
 
     const data: TodayTallyData = JSON.parse(stored);
-    const today = getTodayDateKey();
+    const today = getLocalDayKey();
 
     if (data.date === today) {
       return { reps: data.reps, sets: data.sets };
@@ -31,7 +28,7 @@ function loadTodayTally(): { reps: number; sets: number } {
 
 function saveTodayTally(reps: number, sets: number): void {
   const data: TodayTallyData = {
-    date: getTodayDateKey(),
+    date: getLocalDayKey(),
     reps,
     sets,
   };
@@ -40,21 +37,26 @@ function saveTodayTally(reps: number, sets: number): void {
 
 export function useLocalTodayTally() {
   const [todayStats, setTodayStats] = useState<{ reps: number; sets: number }>(loadTodayTally);
+  const lastCheckedDayRef = useRef<string>(getLocalDayKey());
 
   useEffect(() => {
+    // Load initial state
     const loaded = loadTodayTally();
     setTodayStats(loaded);
 
-    // Check for date rollover periodically
+    // Check for date rollover periodically (stable interval, not recreated on state change)
     const interval = setInterval(() => {
-      const current = loadTodayTally();
-      if (current.reps !== todayStats.reps || current.sets !== todayStats.sets) {
-        setTodayStats(current);
+      const currentDay = getLocalDayKey();
+      if (currentDay !== lastCheckedDayRef.current) {
+        // Day has changed, reload stats (will be 0 for new day)
+        lastCheckedDayRef.current = currentDay;
+        const newStats = loadTodayTally();
+        setTodayStats(newStats);
       }
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [todayStats.reps, todayStats.sets]);
+  }, []); // Empty deps - interval is stable
 
   const addSet = (reps: number) => {
     const newReps = todayStats.reps + reps;

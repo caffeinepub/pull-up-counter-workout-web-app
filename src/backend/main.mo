@@ -3,12 +3,15 @@ import Nat "mo:core/Nat";
 import Iter "mo:core/Iter";
 import Int "mo:core/Int";
 import Time "mo:core/Time";
-import Principal "mo:core/Principal";
+import Array "mo:core/Array";
+import Text "mo:core/Text";
 import Runtime "mo:core/Runtime";
-
+import Principal "mo:core/Principal";
+import Migration "migration";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -101,12 +104,16 @@ actor {
     getUserDayStatsMap(user).get(dayStamp);
   };
 
+  func getCurrentDay(_ : ()) : Nat {
+    let microsPerDay : Int = 1000000 * 60 * 60 * 24;
+    (Int.abs(Time.now() / microsPerDay) % 1000000).toNat();
+  };
+
   public query ({ caller }) func getTodayTotal(_ : ()) : async ?Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Must be signed in to query daily totals");
     };
-    let dayStamp = Int.abs(Time.now() / daysInMicros : Int) % 1000000;
-    switch (getUserDayStatsMap(caller).get(dayStamp)) {
+    switch (getUserDayStatsMap(caller).get(getCurrentDay(()))) {
       case (?stats) { ?stats.reps };
       case (null) { null };
     };
@@ -116,8 +123,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Must be signed in to query daily stats");
     };
-    let dayStamp = Int.abs(Time.now() / daysInMicros : Int) % 1000000;
-    getUserDayStatsMap(caller).get(dayStamp);
+    getUserDayStatsMap(caller).get(getCurrentDay(()));
   };
 
   public shared ({ caller }) func incrementTodayTotal(reps : Nat) : async Nat {
@@ -125,7 +131,7 @@ actor {
       Runtime.trap("Unauthorized: Must be signed in to increment daily totals");
     };
 
-    let dayStamp = Int.abs((Time.now() / daysInMicros : Int)) % 1000000;
+    let dayStamp = getCurrentDay(());
     let userDayStatsMap = getUserDayStatsMap(caller);
     let currentStats = switch (userDayStatsMap.get(dayStamp)) {
       case (?stats) { stats };
@@ -154,8 +160,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Must be signed in to check daily totals");
     };
-    let dayStamp = Int.abs(Time.now() / daysInMicros : Int) % 1000000;
-    switch (getUserDayStatsMap(caller).get(dayStamp)) {
+    switch (getUserDayStatsMap(caller).get(getCurrentDay(()))) {
       case (?stats) { stats.reps > 0 };
       case (null) { false };
     };
@@ -166,14 +171,14 @@ actor {
       Runtime.trap("Unauthorized: Must be signed in to view stats");
     };
 
-    let dailyStats = getUserDayStatsMap(caller);
+    let userDayStats = getUserDayStatsMap(caller);
 
     var dailyTrends : [TrendDay] = [];
     for (i in Nat.range(0, 7)) {
       let dayStart = Time.now() - (i * daysInMicros);
       let dayStamp = Int.abs((dayStart / daysInMicros : Int)) % 1000000;
 
-      let reps = switch (dailyStats.get(dayStamp)) {
+      let reps = switch (userDayStats.get(dayStamp)) {
         case (?stats) { stats.reps };
         case (null) { 0 };
       };

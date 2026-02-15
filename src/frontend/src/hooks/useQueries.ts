@@ -50,6 +50,8 @@ export function useGetTodayTotal() {
       return actor.getTodayTotal(null);
     },
     enabled: !!actor && !isFetching && isAuthenticated,
+    retry: 2,
+    retryDelay: 1000,
   });
 }
 
@@ -65,6 +67,8 @@ export function useGetTodayStats() {
       return actor.getTodayStats(null);
     },
     enabled: !!actor && !isFetching && isAuthenticated,
+    retry: 2,
+    retryDelay: 1000,
   });
 }
 
@@ -80,6 +84,8 @@ export function useGetDayStats(dayStamp: bigint | null) {
       return actor.getDayStats(dayStamp);
     },
     enabled: !!actor && !isFetching && isAuthenticated && dayStamp !== null,
+    retry: 2,
+    retryDelay: 1000,
   });
 }
 
@@ -95,6 +101,8 @@ export function useGetTodayGoal() {
       return actor.getTodayGoal(null);
     },
     enabled: !!actor && !isFetching && isAuthenticated,
+    retry: 2,
+    retryDelay: 1000,
   });
 }
 

@@ -1,13 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Fix Counter daily goal progress for authenticated users, require explicit confirmation when changing the daily target, and add a date selector on Stats to view prior days.
+**Goal:** Prevent “today” stats and daily goal from unexpectedly resetting by making day tracking timezone-safe, ensuring consistent authenticated/unauthenticated persistence, and persisting backend state across canister upgrades.
 
 **Planned changes:**
-- Fix Counter “Today’s Progress” to use the signed-in user’s backend “Today reps” total (and keep local tracking when signed out).
-- Ensure Counter goal progress updates immediately after logging a set (numerator and progress bar) without a full refresh.
-- Change daily target editing to only persist when the user clicks a new “Confirm” button; validate input and keep existing Clear behavior.
-- Add a Stats date selector showing the currently selected date; when signed in, fetch and display stats for that selected day (including prior days).
-- Extend/add React Query + backend support to fetch stats for an arbitrary selected day with date-based query keys and correct caching.
+- Identify and fix the root cause(s) of unexpected stat resets in both local-only (unauthenticated) and backend-synced (authenticated) modes.
+- Update local-only persistence to use a stable local-day identifier so “today” stats and daily goal only roll over when the user’s local date changes.
+- Make authenticated day-based stats timezone-safe by using a single consistent “day identifier” approach shared between frontend and backend, so Counter and Stats screens agree on “today.”
+- Persist backend state for user profiles, per-day stats, and daily goals across canister upgrades using stable storage and upgrade hooks (adding a migration module only if required to preserve existing deployed data).
+- Adjust React Query cache/refetch handling so loading/refetch/error states are not shown as real “0” stats and errors surface appropriately instead of looking like resets.
 
-**User-visible outcome:** Signed-in users see accurate daily goal progress on the Counter that updates as they log sets, can change their daily target only after confirming, and can pick a date on the Stats screen to view that day’s stats (including prior days).
+**User-visible outcome:** Logged reps/sets and daily goals reliably persist across refreshes and over time, “today” no longer resets mid-day due to timezone mismatches, Counter and Stats screens stay in sync for authenticated users, and authenticated data survives deployments/upgrades without loss.

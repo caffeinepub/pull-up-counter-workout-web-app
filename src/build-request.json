@@ -1,93 +1,107 @@
 {
   "kind": "build_request",
-  "title": "Fix Counter daily goal tracking, add confirm button for daily target, and add calendar to view prior days in Stats",
+  "title": "Fix stats resetting by making day tracking timezone-safe and persisting backend state across upgrades",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-30",
-      "text": "Fix the Counter (front page) daily goal progress so it correctly tracks authenticated users’ Today reps total against the daily target goal.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "stats tab seems to be working better, but the daily goal is not tracking on the front page."
-        ]
-      },
-      "acceptanceCriteria": [
-        "When signed in and a daily target goal is set, the Counter screen’s \"Today's Progress\" displays the authenticated user’s current Today reps total (from backend) instead of 0.",
-        "After logging a set while signed in, the Counter screen’s goal progress (numerator and progress bar) updates to reflect the new Today reps total without requiring a full page refresh.",
-        "When not signed in, the Counter screen continues using local Today reps for the goal progress as before."
-      ]
-    },
-    {
-      "id": "REQ-31",
-      "text": "Change daily target goal editing on the Counter screen to require an explicit confirm/save action instead of auto-saving on input blur/Enter, and add a \"Confirm\" button for applying the daily target.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "Add a confirm button for the daily target"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Editing the daily target input does not persist changes to backend (authenticated) or localStorage (unauthenticated) until the user clicks a \"Confirm\" button.",
-        "The Confirm button is disabled when the input is unchanged from the currently-applied daily goal, and shows a loading/disabled state while the save mutation is in progress for authenticated users.",
-        "Invalid input (non-numeric or negative) is rejected with an English error message and does not update the stored goal.",
-        "The existing \"Clear\" behavior remains available and clears the goal (authenticated: set to 0 per current backend contract; unauthenticated: clears local goal)."
-      ]
-    },
-    {
-      "id": "REQ-32",
-      "text": "Add a calendar/date selector on the Stats screen that lets signed-in users select a day and view stats for that selected day (including prior days).",
+      "id": "REQ-34",
+      "text": "Investigate and fix the cause of user stats (today reps/sets and daily goal) appearing to reset unexpectedly, ensuring stats remain consistent across refreshes and over time for both authenticated (backend-synced) and unauthenticated (local-only) modes.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-6"
         ],
         "quotes": [
-          "also add a calendar so i can see prior days in the stats page."
+          "doesn't seem to be keeping my stats? keeps resetting itself or something."
         ]
       },
       "acceptanceCriteria": [
-        "The Stats screen includes a date selector (calendar UI or date input) with a visible currently selected date.",
-        "When signed in, changing the selected date updates the displayed stats to those for the selected day (Total Reps, Sets Logged, Avg Reps/Set).",
-        "If there are no stats for a selected day, the UI shows zeros (or a clear \"No data for this day\" message) in English without throwing errors.",
-        "When not signed in, the Stats screen does not attempt to fetch historical days from the backend; it either limits viewing to today’s local stats or displays an English sign-in prompt for viewing prior days."
+        "Unauthenticated mode: after logging sets, refreshing the page does not reset today's reps/sets unexpectedly.",
+        "Authenticated mode: after logging sets, refreshing the page does not reset today's reps/sets unexpectedly.",
+        "If a reset occurs due to an actual day rollover, the rollover behavior is consistent and explainable (i.e., not triggered mid-day due to timezone/UTC mismatches)."
       ]
     },
     {
-      "id": "REQ-33",
-      "text": "Extend React Query hooks and backend integration to support fetching stats for an arbitrary selected day in the Stats screen, using the existing backend day-based stats query capability.",
-      "target": "both",
+      "id": "REQ-35",
+      "text": "Update unauthenticated (local-only) persistence to use a stable 'local day' key (not UTC-based) so that local today reps/sets and local daily goal do not reset during the user’s local day due to UTC date changes.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-6"
         ],
         "quotes": [
-          "also add a calendar so i can see prior days in the stats page."
+          "doesn't seem to be keeping my stats? keeps resetting itself or something."
         ]
       },
       "acceptanceCriteria": [
-        "Frontend includes a new query hook (or an extension of an existing hook) that fetches day stats given a selected date/day identifier, and uses a queryKey that includes the selected date/day so caching works correctly.",
-        "The backend exposes (or reuses) an authenticated query that allows retrieving stats for a specific day (not only today), and the frontend uses it when signed in.",
-        "No changes are made to immutable frontend paths listed in SYSTEM_CONTEXT.",
-        "After logging a set for today, the Stats screen still updates today’s stats correctly; selecting today in the calendar reflects the updated values."
+        "In a non-UTC timezone, local-only stats and local daily goal do not roll over until the device’s local date changes.",
+        "Local-only stats (reps and sets) and local daily goal persist correctly across page refreshes on the same local day."
+      ]
+    },
+    {
+      "id": "REQ-36",
+      "text": "Make authenticated day-based stats calculations timezone-safe by ensuring the frontend and backend agree on what 'today' means. Implement and use a single consistent approach for computing the day identifier used to read/write daily stats so authenticated users do not see mid-day resets caused by UTC/local day boundary mismatches.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "doesn't seem to be keeping my stats? keeps resetting itself or something."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Authenticated mode: logging a set increments the same 'today' bucket that is displayed on both the Counter and Stats screens, without unexpected resets during the user’s local day.",
+        "Stats screen: the 'Today' view matches what the Counter screen shows for authenticated users.",
+        "Historical day selection continues to work for authenticated users after the change (no regressions in selecting and viewing prior days)."
+      ]
+    },
+    {
+      "id": "REQ-37",
+      "text": "Persist backend state for user profiles, per-user per-day stats, and per-user daily goals across canister upgrades by storing/restoring state using stable variables and appropriate upgrade hooks, so values do not reset after deployments/upgrades.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "doesn't seem to be keeping my stats? keeps resetting itself or something."
+        ]
+      },
+      "acceptanceCriteria": [
+        "After a canister upgrade, previously recorded authenticated user daily stats (reps/sets) remain available.",
+        "After a canister upgrade, previously saved authenticated user daily goal remains available (for the applicable day semantics used by the app).",
+        "No data loss occurs for existing users’ stored stats/goals during upgrade in normal operation."
+      ]
+    },
+    {
+      "id": "REQ-38",
+      "text": "Ensure React Query cache invalidation/refetch behavior does not accidentally present 'reset' values (e.g., transient zeros) when identity/actor changes or queries refetch; loading/error states should not be misrepresented as real zero stats.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "doesn't seem to be keeping my stats? keeps resetting itself or something."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Authenticated mode: if stats queries are loading/refetching, the UI does not misleadingly present a reset-to-zero state as final data.",
+        "If a backend query fails (e.g., unauthorized), the UI surfaces an error state/message rather than silently showing 0 as if stats were reset."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; only introduce/adjust migration logic in backend/migration.mo if persisted state schema changes are required.",
-    "Do not edit files under frontend/src/components/ui or any paths listed in frontend.immutablePaths in SYSTEM_CONTEXT.",
-    "Use English for all user-facing text."
+    "Respect the single-actor backend architecture (all Motoko logic stays in backend/main.mo).",
+    "Only add backend/migration.mo if a state upgrade/migration is required to preserve existing deployed data.",
+    "Do not modify files under frontend/src/components/ui or any other frontend immutable paths listed in SYSTEM_CONTEXT.",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Adding workout session history features (session list/detail) beyond day-based stats selection.",
-    "Adding third-party calendar libraries or external services for calendar/date handling.",
-    "Implementing push notifications, real-time updates, or WebSocket-based syncing."
+    "Adding new tabs/screens beyond the existing Counter and Stats routes.",
+    "Reintroducing session-based workout history or 7-day trend UI/features.",
+    "Adding third-party analytics, external databases, or non-Internet-Identity authentication."
   ],
   "imageRequirements": {
     "required": [],

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { getLocalDayKey } from '../../utils/dayStamp';
 
 const STORAGE_KEY = 'pullup_daily_goal';
 
@@ -7,17 +8,13 @@ interface DailyGoalData {
   goal: number;
 }
 
-function getTodayDateKey(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
 function loadDailyGoal(): number | null {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return null;
 
     const data: DailyGoalData = JSON.parse(stored);
-    const today = getTodayDateKey();
+    const today = getLocalDayKey();
 
     // Only return goal if it's for today
     if (data.date === today) {
@@ -36,7 +33,7 @@ function saveDailyGoal(goal: number | null): void {
   }
 
   const data: DailyGoalData = {
-    date: getTodayDateKey(),
+    date: getLocalDayKey(),
     goal,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -44,21 +41,26 @@ function saveDailyGoal(goal: number | null): void {
 
 export function useLocalDailyGoal() {
   const [dailyGoal, setDailyGoal] = useState<number | null>(loadDailyGoal);
+  const lastCheckedDayRef = useRef<string>(getLocalDayKey());
 
   useEffect(() => {
+    // Load initial state
     const loaded = loadDailyGoal();
     setDailyGoal(loaded);
 
-    // Check for date rollover periodically
+    // Check for date rollover periodically (stable interval, not recreated on state change)
     const interval = setInterval(() => {
-      const current = loadDailyGoal();
-      if (current !== dailyGoal) {
-        setDailyGoal(current);
+      const currentDay = getLocalDayKey();
+      if (currentDay !== lastCheckedDayRef.current) {
+        // Day has changed, reload goal (will be null for new day)
+        lastCheckedDayRef.current = currentDay;
+        const newGoal = loadDailyGoal();
+        setDailyGoal(newGoal);
       }
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [dailyGoal]);
+  }, []); // Empty deps - interval is stable
 
   const setGoal = (goal: number | null) => {
     setDailyGoal(goal);

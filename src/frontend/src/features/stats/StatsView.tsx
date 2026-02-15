@@ -3,10 +3,10 @@ import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 import { useGetTodayStats, useGetTodayGoal, useGetDayStats } from '../../hooks/useQueries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, AlertCircle, Target, Calendar as CalendarIcon } from 'lucide-react';
+import { CheckCircle, AlertCircle, Target, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { useLocalTodayTally } from '../counter/useLocalTodayTally';
 import { useLocalDailyGoal } from '../counter/useLocalDailyGoal';
-import { getTodayDateString, dateStringToDayStamp, getTodayDayStamp } from '../../utils/dayStamp';
+import { getTodayDateString, dateStringToDayStamp } from '../../utils/dayStamp';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
@@ -19,11 +19,31 @@ export default function StatsView() {
   const isToday = selectedDate === getTodayDateString();
 
   // Fetch stats based on selected date
-  const { data: backendTodayStats } = useGetTodayStats();
-  const { data: backendDayStats } = useGetDayStats(selectedDayStamp);
-  const { data: backendGoalData } = useGetTodayGoal();
+  const { 
+    data: backendTodayStats, 
+    isLoading: todayStatsLoading, 
+    isError: todayStatsError 
+  } = useGetTodayStats();
+  
+  const { 
+    data: backendDayStats, 
+    isLoading: dayStatsLoading, 
+    isError: dayStatsError 
+  } = useGetDayStats(selectedDayStamp);
+  
+  const { 
+    data: backendGoalData, 
+    isLoading: goalLoading, 
+    isError: goalError 
+  } = useGetTodayGoal();
+  
   const { todayReps: localTodayReps, todaySets: localTodaySets } = useLocalTodayTally();
   const { dailyGoal: localDailyGoal } = useLocalDailyGoal();
+
+  // Determine loading and error states
+  const isLoadingStats = isAuthenticated && (isToday ? todayStatsLoading : dayStatsLoading);
+  const hasStatsError = isAuthenticated && (isToday ? todayStatsError : dayStatsError);
+  const isLoadingGoal = isAuthenticated && goalLoading;
 
   // Use appropriate stats based on authentication and date selection
   let displayReps: number;
@@ -95,43 +115,58 @@ export default function StatsView() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-4xl font-bold tracking-tighter text-primary">
-                {displayReps}
-              </div>
-              <p className="text-muted-foreground text-xs mt-1">Total Reps</p>
+          {isLoadingStats ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-            <div>
-              <div className="text-4xl font-bold tracking-tighter text-primary">
-                {displaySets}
-              </div>
-              <p className="text-muted-foreground text-xs mt-1">Sets Logged</p>
-            </div>
-            <div>
-              <div className="text-4xl font-bold tracking-tighter text-primary">
-                {averageRepsPerSet}
-              </div>
-              <p className="text-muted-foreground text-xs mt-1">Avg Reps/Set</p>
-            </div>
-          </div>
-          
-          {displayReps === 0 && displaySets === 0 && !isToday && (
-            <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg text-sm">
-              <AlertCircle className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <p className="text-muted-foreground">
-                No data for this day
+          ) : hasStatsError ? (
+            <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg text-sm">
+              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+              <p className="text-destructive">
+                Failed to load stats. Please try again.
               </p>
             </div>
-          )}
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-4xl font-bold tracking-tighter text-primary">
+                    {displayReps}
+                  </div>
+                  <p className="text-muted-foreground text-xs mt-1">Total Reps</p>
+                </div>
+                <div>
+                  <div className="text-4xl font-bold tracking-tighter text-primary">
+                    {displaySets}
+                  </div>
+                  <p className="text-muted-foreground text-xs mt-1">Sets Logged</p>
+                </div>
+                <div>
+                  <div className="text-4xl font-bold tracking-tighter text-primary">
+                    {averageRepsPerSet}
+                  </div>
+                  <p className="text-muted-foreground text-xs mt-1">Avg Reps/Set</p>
+                </div>
+              </div>
+              
+              {displayReps === 0 && displaySets === 0 && !isToday && (
+                <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg text-sm">
+                  <AlertCircle className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <p className="text-muted-foreground">
+                    No data for this day
+                  </p>
+                </div>
+              )}
 
-          {!isAuthenticated && (
-            <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg text-sm">
-              <AlertCircle className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <p className="text-muted-foreground">
-                Sign in to sync your daily stats across devices and view historical data
-              </p>
-            </div>
+              {!isAuthenticated && (
+                <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg text-sm">
+                  <AlertCircle className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <p className="text-muted-foreground">
+                    Sign in to sync your daily stats across devices and view historical data
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -146,13 +181,21 @@ export default function StatsView() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between items-baseline">
-              <span className="text-2xl font-bold text-primary">{displayReps}</span>
-              <span className="text-muted-foreground">/ {dailyGoal} reps</span>
-            </div>
-            <Progress value={goalProgress ?? 0} className="h-3" />
-            {goalProgress !== null && goalProgress >= 100 && (
-              <p className="text-sm text-primary font-medium">🎉 Goal achieved!</p>
+            {isLoadingGoal || isLoadingStats ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-2xl font-bold text-primary">{displayReps}</span>
+                  <span className="text-muted-foreground">/ {dailyGoal} reps</span>
+                </div>
+                <Progress value={goalProgress ?? 0} className="h-3" />
+                {goalProgress !== null && goalProgress >= 100 && (
+                  <p className="text-sm text-primary font-medium">🎉 Goal achieved!</p>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

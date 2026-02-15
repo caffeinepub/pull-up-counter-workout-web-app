@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Minus, RotateCcw, CheckCircle, Check } from 'lucide-react';
+import { Plus, Minus, RotateCcw, CheckCircle, Check, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import ResetSessionDialog from './ResetSessionDialog';
 import ResetTodayDialog from './ResetTodayDialog';
@@ -24,13 +24,21 @@ export default function CounterScreen() {
   const { todayReps: localTodayReps, addSet: addLocalSet, resetToday: resetLocalToday } = useLocalTodayTally();
   
   // Fetch authenticated user's today total
-  const { data: backendTodayTotal } = useGetTodayTotal();
+  const { 
+    data: backendTodayTotal, 
+    isLoading: todayTotalLoading, 
+    isError: todayTotalError 
+  } = useGetTodayTotal();
   
   // Local goal for unauthenticated users
   const { dailyGoal: localDailyGoal, setGoal: setLocalGoal } = useLocalDailyGoal();
   
   // Backend goal for authenticated users
-  const { data: backendGoalData } = useGetTodayGoal();
+  const { 
+    data: backendGoalData, 
+    isLoading: goalLoading, 
+    isError: goalQueryError 
+  } = useGetTodayGoal();
   const setBackendGoal = useSetTodayGoal();
 
   // Determine which goal to use
@@ -40,12 +48,12 @@ export default function CounterScreen() {
 
   // Draft state for goal input (not yet confirmed)
   const [goalDraft, setGoalDraft] = useState<string>('');
-  const [goalError, setGoalError] = useState<string>('');
+  const [goalValidationError, setGoalValidationError] = useState<string>('');
 
   // Sync goalDraft with dailyGoal when it changes
   useEffect(() => {
     setGoalDraft(dailyGoal !== null ? String(dailyGoal) : '');
-    setGoalError('');
+    setGoalValidationError('');
   }, [dailyGoal]);
 
   const incrementRepsCount = () => setReps((prev) => prev + 1);
@@ -91,14 +99,14 @@ export default function CounterScreen() {
 
   const handleGoalChange = (value: string) => {
     setGoalDraft(value);
-    setGoalError('');
+    setGoalValidationError('');
   };
 
   const handleConfirmGoal = async () => {
     const parsedGoal = goalDraft === '' ? null : parseInt(goalDraft, 10);
     
     if (parsedGoal !== null && (isNaN(parsedGoal) || parsedGoal < 0)) {
-      setGoalError('Please enter a valid positive number');
+      setGoalValidationError('Please enter a valid positive number');
       return;
     }
 
@@ -148,6 +156,9 @@ export default function CounterScreen() {
   const isDraftChanged = goalDraft !== (dailyGoal !== null ? String(dailyGoal) : '');
   const isConfirmDisabled = !isDraftChanged || setBackendGoal.isPending;
 
+  // Show loading state for authenticated users while data is loading
+  const isLoadingData = isAuthenticated && (todayTotalLoading || goalLoading);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Main Counter Card */}
@@ -193,8 +204,17 @@ export default function CounterScreen() {
               className="w-full"
               disabled={incrementTodayTotal.isPending}
             >
-              <CheckCircle className="w-5 h-5 mr-2" />
-              {incrementTodayTotal.isPending ? 'Logging...' : 'Log Set'}
+              {incrementTodayTotal.isPending ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Logging...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  Log Set
+                </>
+              )}
             </Button>
           )}
 
@@ -202,98 +222,131 @@ export default function CounterScreen() {
           {reps > 0 && (
             <Button
               onClick={() => setShowResetDialog(true)}
-              size="lg"
-              variant="outline"
+              variant="ghost"
+              size="sm"
               className="w-full"
             >
-              <RotateCcw className="w-5 h-5 mr-2" />
+              <RotateCcw className="w-4 h-4 mr-2" />
               Reset Set
             </Button>
           )}
         </CardContent>
       </Card>
 
-      {/* Daily Goal Setting */}
-      <Card>
+      {/* Today's Total Card */}
+      <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader>
-          <CardTitle>Daily Goal (Optional)</CardTitle>
+          <CardTitle className="text-center text-xl">Today's Total</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2 items-start">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="goal">Target Reps for Today</Label>
-              <Input
-                id="goal"
-                type="number"
-                min="0"
-                placeholder="e.g., 100"
-                value={goalDraft}
-                onChange={(e) => handleGoalChange(e.target.value)}
-                className={goalError ? 'border-destructive' : ''}
-              />
-              {goalError && (
-                <p className="text-sm text-destructive">{goalError}</p>
-              )}
+          {isLoadingData ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-            <div className="flex gap-2 pt-8">
-              <Button
-                variant="default"
-                onClick={handleConfirmGoal}
-                disabled={isConfirmDisabled}
-                className="min-w-[100px]"
-              >
-                {setBackendGoal.isPending ? (
-                  'Saving...'
-                ) : (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Confirm
-                  </>
-                )}
-              </Button>
-              {dailyGoal !== null && dailyGoal > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={handleClearGoal}
-                  disabled={setBackendGoal.isPending}
-                >
-                  Clear
-                </Button>
-              )}
+          ) : todayTotalError ? (
+            <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg text-sm">
+              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+              <p className="text-destructive">
+                Failed to load today's total. Please try again.
+              </p>
             </div>
-          </div>
-
-          {/* Daily Goal Progress */}
-          {dailyGoal !== null && dailyGoal > 0 && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Today's Progress</span>
-                <span>
-                  {todayTotalReps} / {dailyGoal}
-                </span>
+          ) : (
+            <>
+              <div className="text-center">
+                <div className="text-6xl font-bold tracking-tighter text-primary">
+                  {todayTotalReps}
+                </div>
+                <p className="text-muted-foreground text-sm mt-2">Total Pull-ups</p>
               </div>
-              <Progress value={progressPercentage} className="h-3" />
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Reset Today Button for Unauthenticated Users */}
-      {!isAuthenticated && localTodayReps > 0 && (
-        <Card>
-          <CardContent className="py-4">
+              {dailyGoal !== null && dailyGoal > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Goal Progress</span>
+                    <span className="font-medium">{Math.round(progressPercentage)}%</span>
+                  </div>
+                  <Progress value={progressPercentage} className="h-2" />
+                  {progressPercentage >= 100 && (
+                    <p className="text-sm text-primary font-medium text-center">
+                      🎉 Goal achieved!
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {!isAuthenticated && (
             <Button
-              variant="outline"
-              size="sm"
               onClick={() => setShowResetTodayDialog(true)}
+              variant="ghost"
+              size="sm"
               className="w-full"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset Today's Total
             </Button>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Daily Goal Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Daily Goal</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoadingData ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="goal-input">Set your daily pull-up goal</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="goal-input"
+                    type="number"
+                    min="0"
+                    placeholder="Enter goal"
+                    value={goalDraft}
+                    onChange={(e) => handleGoalChange(e.target.value)}
+                    className={goalValidationError ? 'border-destructive' : ''}
+                  />
+                  <Button
+                    onClick={handleConfirmGoal}
+                    disabled={isConfirmDisabled}
+                    size="icon"
+                    variant="secondary"
+                  >
+                    {setBackendGoal.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Check className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+                {goalValidationError && (
+                  <p className="text-sm text-destructive">{goalValidationError}</p>
+                )}
+              </div>
+
+              {dailyGoal !== null && dailyGoal > 0 && (
+                <Button
+                  onClick={handleClearGoal}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                  disabled={setBackendGoal.isPending}
+                >
+                  Clear Goal
+                </Button>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <ResetSessionDialog
         open={showResetDialog}
