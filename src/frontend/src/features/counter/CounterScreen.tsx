@@ -45,9 +45,9 @@ export default function CounterScreen() {
   } = useGetTodayGoal();
   const setBackendGoal = useSetTodayGoal();
 
-  // Determine which goal to use - only use backend data if fetched
+  // Determine which goal to use - only use backend data if fetched and not in error
   const dailyGoal = isAuthenticated 
-    ? (goalFetched ? (backendGoalData ? Number(backendGoalData) : null) : null)
+    ? (goalFetched && !goalQueryError ? (backendGoalData ? Number(backendGoalData) : null) : null)
     : localDailyGoal;
 
   // Draft state for goal input (not yet confirmed)
@@ -56,11 +56,11 @@ export default function CounterScreen() {
 
   // Sync goalDraft with dailyGoal when it changes and is loaded
   useEffect(() => {
-    if (!isAuthenticated || goalFetched) {
+    if (!isAuthenticated || (goalFetched && !goalQueryError)) {
       setGoalDraft(dailyGoal !== null ? String(dailyGoal) : '');
       setGoalValidationError('');
     }
-  }, [dailyGoal, isAuthenticated, goalFetched]);
+  }, [dailyGoal, isAuthenticated, goalFetched, goalQueryError]);
 
   const incrementRepsCount = () => setReps((prev) => prev + 1);
   const decrementRepsCount = () => setReps((prev) => Math.max(0, prev - 1));
@@ -151,9 +151,9 @@ export default function CounterScreen() {
     }
   };
 
-  // Calculate today's total reps for progress - only use backend data if fetched
+  // Calculate today's total reps for progress - only use backend data if fetched and not in error
   const todayTotalReps = isAuthenticated 
-    ? (todayTotalFetched ? (backendTodayTotal ? Number(backendTodayTotal) : 0) : 0)
+    ? (todayTotalFetched && !todayTotalError ? (backendTodayTotal ? Number(backendTodayTotal) : 0) : 0)
     : localTodayReps;
   
   const progressPercentage = dailyGoal && dailyGoal > 0 ? Math.min((todayTotalReps / dailyGoal) * 100, 100) : 0;
@@ -164,6 +164,10 @@ export default function CounterScreen() {
 
   // Show loading state for authenticated users while data is loading
   const isLoadingData = isAuthenticated && (todayTotalLoading || goalLoading);
+
+  // Determine if we should show error UI or normal UI
+  const showTodayTotalError = isAuthenticated && todayTotalError;
+  const showGoalError = isAuthenticated && goalQueryError;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -250,7 +254,7 @@ export default function CounterScreen() {
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Loading your stats...</p>
             </div>
-          ) : todayTotalError ? (
+          ) : showTodayTotalError ? (
             <div className="space-y-3">
               <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg text-sm">
                 <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
@@ -319,7 +323,7 @@ export default function CounterScreen() {
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Loading goal...</p>
             </div>
-          ) : goalQueryError ? (
+          ) : showGoalError ? (
             <div className="space-y-3">
               <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg text-sm">
                 <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />

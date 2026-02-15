@@ -61,20 +61,23 @@ export default function StatsView() {
       hasStatsError = todayStatsError;
       hasGoalError = goalError;
       
-      if (todayStatsFetched) {
+      // Only set displayStats if fetched and no error
+      if (todayStatsFetched && !todayStatsError) {
         displayStats = backendTodayStats 
           ? { reps: Number(backendTodayStats.reps), sets: Number(backendTodayStats.sets) }
           : { reps: 0, sets: 0 };
       }
       
-      if (goalFetched) {
+      // Only set displayGoal if fetched and no error
+      if (goalFetched && !goalError) {
         displayGoal = backendGoalData ? Number(backendGoalData) : null;
       }
     } else {
       isLoadingStats = dayStatsLoading;
       hasStatsError = dayStatsError;
       
-      if (dayStatsFetched) {
+      // Only set displayStats if fetched and no error
+      if (dayStatsFetched && !dayStatsError) {
         displayStats = backendDayStats 
           ? { reps: Number(backendDayStats.reps), sets: Number(backendDayStats.sets) }
           : { reps: 0, sets: 0 };
@@ -128,20 +131,15 @@ export default function StatsView() {
                 onChange={(e) => setSelectedDate(e.target.value)}
                 max={getTodayDateString()}
               />
-              {!isToday && (
-                <p className="text-sm text-muted-foreground">
-                  Viewing historical data for {selectedDate}
-                </p>
-              )}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Stats Overview Card */}
+      {/* Stats Card */}
       <Card className="border-2 border-primary/20">
         <CardHeader>
-          <CardTitle className="text-center text-xl">
+          <CardTitle className="text-xl">
             {isToday ? "Today's Statistics" : `Statistics for ${selectedDate}`}
           </CardTitle>
         </CardHeader>
@@ -151,12 +149,14 @@ export default function StatsView() {
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Loading statistics...</p>
             </div>
-          ) : hasStatsError ? (
+          ) : hasStatsError || (isToday && hasGoalError) ? (
             <div className="space-y-3">
               <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg text-sm">
                 <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
                 <p className="text-destructive">
-                  Failed to load statistics. Please try again.
+                  {hasStatsError 
+                    ? 'Failed to load statistics. Please try again.'
+                    : 'Failed to load daily goal. Please try again.'}
                 </p>
               </div>
               <Button
@@ -171,78 +171,80 @@ export default function StatsView() {
             </div>
           ) : displayStats ? (
             <>
-              {/* Total Reps */}
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground uppercase tracking-wide">Total Pull-ups</p>
-                <div className="text-6xl font-bold tracking-tighter text-primary">
-                  {displayStats.reps}
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-primary/5 rounded-lg">
+                  <div className="text-4xl font-bold text-primary">{displayStats.reps}</div>
+                  <p className="text-sm text-muted-foreground mt-1">Total Reps</p>
+                </div>
+                <div className="text-center p-4 bg-primary/5 rounded-lg">
+                  <div className="text-4xl font-bold text-primary">{displayStats.sets}</div>
+                  <p className="text-sm text-muted-foreground mt-1">Total Sets</p>
                 </div>
               </div>
 
-              {/* Sets Count */}
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground uppercase tracking-wide">Sets Completed</p>
-                <div className="text-4xl font-bold tracking-tighter">
-                  {displayStats.sets}
+              {/* Average Reps per Set */}
+              {displayStats.sets > 0 && (
+                <div className="text-center p-4 bg-secondary/10 rounded-lg">
+                  <div className="text-3xl font-bold text-secondary">
+                    {(displayStats.reps / displayStats.sets).toFixed(1)}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Average Reps per Set</p>
                 </div>
-              </div>
+              )}
 
               {/* Goal Progress - Only for today */}
               {isToday && displayGoal !== null && displayGoal > 0 && (
-                <div className="space-y-3 pt-4 border-t">
+                <div className="space-y-3 p-4 bg-accent/10 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Target className="w-5 h-5 text-primary" />
+                      <Target className="w-5 h-5 text-accent" />
                       <span className="font-medium">Daily Goal</span>
                     </div>
-                    <span className="text-2xl font-bold">{displayGoal}</span>
+                    <span className="text-sm font-medium">{displayGoal} reps</span>
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Progress</span>
                       <span className="font-medium">{Math.round(progressPercentage)}%</span>
                     </div>
-                    <Progress value={progressPercentage} className="h-3" />
+                    <Progress value={progressPercentage} className="h-2" />
                   </div>
                   {progressPercentage >= 100 && (
-                    <div className="flex items-center justify-center gap-2 p-3 bg-primary/10 rounded-lg">
-                      <CheckCircle className="w-5 h-5 text-primary" />
-                      <p className="text-sm font-medium text-primary">
-                        Goal achieved! Great work! 🎉
-                      </p>
+                    <div className="flex items-center justify-center gap-2 text-primary font-medium">
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Goal achieved!</span>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* No goal set message */}
-              {isToday && (displayGoal === null || displayGoal === 0) && (
-                <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg text-sm">
-                  <Target className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <p className="text-muted-foreground">
-                    No daily goal set. Set a goal in the Counter tab to track your progress!
-                  </p>
+              {/* No data message */}
+              {displayStats.reps === 0 && displayStats.sets === 0 && (
+                <div className="text-center py-6 text-muted-foreground">
+                  <p>No workout data for this date.</p>
+                  {isToday && <p className="text-sm mt-2">Start logging sets to see your stats!</p>}
                 </div>
               )}
             </>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              <p>No data available</p>
+              <p>Unable to load statistics.</p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Info Card for Guest Users */}
+      {/* Guest Mode Notice */}
       {!isAuthenticated && (
-        <Card className="border-primary/20">
+        <Card className="border-2 border-muted">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
               <div className="space-y-1">
-                <p className="text-sm font-medium">Sign in to unlock more features</p>
+                <p className="text-sm font-medium">Guest Mode</p>
                 <p className="text-sm text-muted-foreground">
-                  Track your progress over time, view historical data, and access your stats from any device.
+                  Sign in to view historical statistics and track your progress over time.
                 </p>
               </div>
             </div>

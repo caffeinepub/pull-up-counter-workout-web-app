@@ -1,58 +1,26 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix persistence + correct authenticated rehydration/loading states",
+  "title": "Frontend: Show explicit error states instead of zero values when authenticated backend queries fail",
   "requirements": [
     {
-      "id": "REQ-39",
-      "summary": "Ensure guest localStorage state and authenticated backend-synced state rehydrate correctly on app load/refresh so Today totals/sets and daily goal don’t appear to disappear.",
+      "id": "REQ-44",
+      "summary": "Prevent authenticated backend query failures from being shown as valid 0/empty values on Counter and Stats by adding explicit error UI with Retry for Today total/goal and today stats/goal.",
       "acceptanceCriteria": [
-        "As a guest (not signed in), after logging a set and/or setting a daily goal, refreshing the page preserves the same Today total/sets and goal for the current local day.",
-        "As a guest, closing the browser and reopening the app preserves the same Today total/sets and goal for the current local day.",
-        "As an authenticated user, after logging a set and/or setting a daily goal, refreshing the page preserves the same Today total and goal (no reverting to empty/zero as the final state).",
-        "The Stats screen reflects the same persisted values after refresh/reopen when viewing the current day."
+        "When authenticated backend calls error, Counter screen shows the existing error UI (with Retry) instead of showing 0 as a normal value.",
+        "When authenticated backend calls error, Stats screen shows an explicit error state (with Retry) instead of showing 0 as a normal value.",
+        "Retry actions refetch the correct queries and, once the backend is healthy, show the persisted values."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Update authenticated React Query hooks (today total, today stats, day stats, today goal) to expose actor-aware loading/ready state (e.g., treat “actor is initializing / query disabled” as loading, not as loaded-empty), and ensure callers can reliably distinguish between “not fetched yet” vs “fetched and empty (null)”. This supports correct rehydration without transient zero/blank render. Verify the selected authorization component’s frontend usage instructions before implementing."
-        },
-        {
           "path": "frontend/src/features/counter/CounterScreen.tsx",
           "operation": "modify",
-          "description": "Adjust authenticated-mode rendering so Today Total and Daily Goal derive from backend values only after the relevant queries have actually fetched; avoid mapping undefined/not-fetched states to 0/null. Keep guest mode using existing localStorage hooks so values rehydrate on refresh/restart for the current local day. Verify the selected authorization component’s frontend usage instructions before implementing."
+          "description": "Tighten authenticated rendering so Today total/goal values are never presented as normal 0/empty values when the corresponding backend query is in an error state; ensure the UI prioritizes the existing explicit error blocks with Retry for authenticated users and does not render the numeric total/goal inputs in the non-error branch when the query has errored."
         },
         {
           "path": "frontend/src/features/stats/StatsView.tsx",
           "operation": "modify",
-          "description": "Ensure authenticated-mode Stats for today (and goal progress) uses backend values only after queries are fetched; prevent transient 0/empty stats during actor/query initialization. Keep guest mode reading today’s values from localStorage-backed hooks to preserve refresh/restart persistence. Verify the selected authorization component’s frontend usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-40",
-      "summary": "Prevent transient authenticated loading states from appearing as real reset values; show explicit loading/placeholder UI and error-with-retry instead of 0/null while identity/actor/queries initialize.",
-      "acceptanceCriteria": [
-        "When authenticated, the Counter screen does not render Today’s Total as 0 solely because React Query data is not yet loaded; it shows a loading indicator/skeleton/placeholder until the query resolves or errors.",
-        "When authenticated, the Daily Goal input does not clear solely due to initialization/refetch; it remains in a loading state until the goal query resolves or errors.",
-        "If backend queries error, the UI shows an error state (not a 0-value state) and offers a clear retry path or instructions."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Standardize hook return shapes to include correct composite loading flags (actor initializing + query loading), fetched/ready flags, and access to refetch where needed so screens can render placeholders and provide a retry action rather than rendering zero-values. Verify the selected authorization component’s frontend usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/counter/CounterScreen.tsx",
-          "operation": "modify",
-          "description": "Replace any authenticated initial render paths that show 0/empty goal due to not-yet-fetched data with explicit loading placeholders. On query error, show an error state with a clear retry action (using the query refetch) rather than showing 0/null. Verify the selected authorization component’s frontend usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/stats/StatsView.tsx",
-          "operation": "modify",
-          "description": "Ensure authenticated stats and goal progress do not render 0/empty during initialization; show loading placeholders until fetched, and on error show an explicit error state with a retry action (using query refetch) instead of a 0-value UI. Verify the selected authorization component’s frontend usage instructions before implementing."
+          "description": "Add explicit authenticated error presentation for goal query failures (in addition to stats failures) so the Stats screen does not imply a missing/zero goal when the goal backend call fails; ensure a Retry action refetches the correct query/queries (today stats + today goal for today, day stats for historical dates) and that error UI takes precedence over the normal stats/goal display."
         }
       ]
     }

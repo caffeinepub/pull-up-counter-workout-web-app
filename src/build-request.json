@@ -1,75 +1,84 @@
 {
   "kind": "build_request",
-  "title": "Fix data persistence across refresh/browser restart (guest localStorage + authenticated backend state)",
+  "title": "Fix backend persistence so user data survives refreshes and deployments",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-39",
-      "text": "Investigate and fix why a user’s logged sets/today totals and daily goal can appear to disappear after a page refresh or browser restart, and ensure values rehydrate correctly on app load for both unauthenticated (local-only) and authenticated (backend-synced) modes.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "data doesn't seem persistent. when I refresh the page or close the browser, its gone"
-        ]
-      },
-      "acceptanceCriteria": [
-        "As a guest (not signed in), after logging a set and/or setting a daily goal, refreshing the page preserves the same Today total/sets and goal for the current local day.",
-        "As a guest, closing the browser and reopening the app preserves the same Today total/sets and goal for the current local day.",
-        "As an authenticated user, after logging a set and/or setting a daily goal, refreshing the page preserves the same Today total and goal (no reverting to empty/zero as the final state).",
-        "The Stats screen reflects the same persisted values after refresh/reopen when viewing the current day."
-      ]
-    },
-    {
-      "id": "REQ-40",
-      "text": "Update the frontend to avoid presenting transient loading states as real “reset” values for authenticated users on initial load/refresh (e.g., showing 0/null totals/goals while identity/actor/queries are initializing). Use explicit loading/placeholder UI until backend values are fetched or an error state is confirmed.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "when I refresh the page ... its gone"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When authenticated, the Counter screen does not render Today’s Total as 0 solely because React Query data is not yet loaded; it shows a loading indicator/skeleton/placeholder until the query resolves or errors.",
-        "When authenticated, the Daily Goal input does not clear solely due to initialization/refetch; it remains in a loading state until the goal query resolves or errors.",
-        "If backend queries error, the UI shows an error state (not a 0-value state) and offers a clear retry path or instructions."
-      ]
-    },
-    {
-      "id": "REQ-41",
-      "text": "Persist authenticated user data in the Motoko canister across upgrades by storing and restoring all required state in stable variables via upgrade hooks, including (at minimum) user profiles, per-user per-day stats/totals, and per-user daily goals.",
+      "id": "REQ-42",
+      "text": "Implement canister state persistence for authenticated user data so it does not reset after deployments/upgrades. Persist and restore, at minimum: userProfiles, per-user per-day dailyStats (reps + sets keyed by dayStamp), and userDailyGoals.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-5"
         ],
         "quotes": [
-          "when I refresh the page or close the browser, its gone"
+          "No. Still not working. Data is not persistent."
         ]
       },
       "acceptanceCriteria": [
-        "After an authenticated user logs sets and sets a daily goal, those values remain available after a canister upgrade/redeploy (no data loss).",
-        "Backend read APIs (e.g., getTodayStats/getTodayTotal/getDayStats/getTodayGoal) return the previously stored values after upgrade.",
-        "Backend write APIs (e.g., incrementTodayTotal/setTodayGoal/saveCallerUserProfile) continue to work after upgrade without requiring manual resets."
+        "After logging sets while signed in, then redeploying/upgrading the canister, the signed-in user still sees the same Today total and Today stats for the current day.",
+        "After setting a daily goal while signed in, then redeploying/upgrading the canister, the goal value is still returned by getTodayGoal and shown in the UI.",
+        "After redeploying/upgrading the canister, previously saved per-day stats remain queryable via getDayStats(dayStamp) for historical days (where data existed before the upgrade)."
+      ]
+    },
+    {
+      "id": "REQ-43",
+      "text": "Add safe preupgrade/postupgrade hooks in backend/main.mo that serialize non-stable in-memory structures into stable variables and reconstruct them on upgrade, without changing the public API shape.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-5"
+        ],
+        "quotes": [
+          "Data is not persistent."
+        ]
+      },
+      "acceptanceCriteria": [
+        "backend/main.mo defines stable variables that fully capture the data needed to rebuild userProfiles, dailyStats, and userDailyGoals.",
+        "system preupgrade() saves current in-memory state into stable variables.",
+        "system postupgrade() restores in-memory state from stable variables so subsequent calls return the same values as before the upgrade.",
+        "The existing query/update methods (e.g., getTodayTotal, getTodayStats, incrementTodayTotal, getDayStats, getTodayGoal, setTodayGoal) continue to compile and behave consistently after introducing upgrade hooks."
+      ]
+    },
+    {
+      "id": "REQ-44",
+      "text": "Ensure the frontend does not misrepresent backend persistence failures as valid zero values for authenticated users: when backend queries fail (e.g., due to traps/upgrade issues), show an explicit error state with a retry action (do not silently fall back to 0). Apply this to Today total/goal on Counter and stats/goal on Stats.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-5"
+        ],
+        "quotes": [
+          "Still not working. Data is not persistent."
+        ]
+      },
+      "acceptanceCriteria": [
+        "When authenticated backend calls error, Counter screen shows the existing error UI (with Retry) instead of showing 0 as a normal value.",
+        "When authenticated backend calls error, Stats screen shows an explicit error state (with Retry) instead of showing 0 as a normal value.",
+        "Retry actions refetch the correct queries and, once the backend is healthy, show the persisted values."
       ]
     }
   ],
   "constraints": [
     "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit files under frontend/src/components/ui or other frontend immutable paths listed in SYSTEM_CONTEXT.",
-    "Use English for any user-facing text."
+    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui."
   ],
   "nonGoals": [
-    "Adding new product features unrelated to persistence (e.g., new workout modes, new tabs, new charts).",
-    "Introducing external databases or third-party storage providers."
+    "Do not add new workout features or new screens beyond fixing persistence and related error presentation.",
+    "Do not add external databases or non-Internet-Computer storage providers."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

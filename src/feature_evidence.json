@@ -2,12 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-investigate-and-fix-why-a-user-s-logged-sets-today-totals-and-daily-goal-can-appear-to-disappear-after-a-page-refresh-or-browser-restart-and-ensure-values-rehydrate-correctly-on-app-load-for-both-unauthenticated-local-only-and-authenticated-backend-synced-modes",
-      "featureTitle": "Investigate and fix why a user’s logged sets/today totals and daily goal can appear to disappear after a page refresh or browser restart, and ensure values rehydrate correctly on app load for both unauthenticated (local-only) and authenticated (backend-synced) modes.",
+      "featureId": "feature-ensure-the-frontend-does-not-misrepresent-backend-persistence-failures-as-valid-zero-values-for-authenticated-users-when-backend-queries-fail-e-g-due-to-traps-upgrade-issues-show-an-explicit-error-state-with-a-retry-action-do-not-silently-fall-back-to-0-apply-this-to-today-total-goal-on-counter-and-stats-goal-on-stats",
+      "featureTitle": "Ensure the frontend does not misrepresent backend persistence failures as valid zero values for authenticated users: when backend queries fail (e.g., due to traps/upgrade issues), show an explicit error state with a retry action (do not silently fall back to 0). Apply this to Today total/goal on Counter and stats/goal on Stats.",
       "files": [
         "frontend/src/features/counter/CounterScreen.tsx",
-        "frontend/src/features/stats/StatsView.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/features/stats/StatsView.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -18,28 +17,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-39"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-frontend-to-avoid-presenting-transient-loading-states-as-real-reset-values-for-authenticated-users-on-initial-load-refresh-e-g-showing-0-null-totals-goals-while-identity-actor-queries-are-initializing-use-explicit-loading-placeholder-ui-until-backend-values-are-fetched-or-an-error-state-is-confirmed",
-      "featureTitle": "Update the frontend to avoid presenting transient loading states as real “reset” values for authenticated users on initial load/refresh (e.g., showing 0/null totals/goals while identity/actor/queries are initializing). Use explicit loading/placeholder UI until backend values are fetched or an error state is confirmed.",
-      "files": [
-        "frontend/src/features/counter/CounterScreen.tsx",
-        "frontend/src/features/stats/StatsView.tsx",
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-40"
+        "REQ-44"
       ],
       "confidence": "high"
     }

@@ -1,34 +1,34 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T20:01:04.112Z",
-  "summary": "Frontend changes add explicit loading/fetched gating around authenticated React Query data (today total/stats/goal) to avoid transient 0/null “reset” renders on refresh, and introduce/consume local-only hooks for guest persistence. Backend changes shown define in-memory Maps for profiles/stats/goals, but the diff does not show stable storage or upgrade hooks needed to persist authenticated data across canister upgrades.",
+  "generatedAt": "2026-02-15T20:10:41.141Z",
+  "summary": "Backend persistence/upgrade safety required by REQ-42/REQ-43 is not evidenced in the provided diff summary (no stable variables or preupgrade/postupgrade hooks shown). Frontend changes in CounterScreen and StatsView appear to move toward explicit error handling with retry, aligning with REQ-44, but render-level confirmation is truncated.",
   "missing_requirements": [
     {
-      "id": "REQ-41",
-      "requirement": "Persist authenticated user data in the Motoko canister across upgrades by storing and restoring all required state in stable variables via upgrade hooks (at minimum: user profiles, per-user per-day stats/totals, per-user daily goals).",
-      "reason": "The backend diff excerpt shows state held in non-stable in-memory Maps (userProfiles, dailyStats, userDailyGoals) and does not show any stable variables nor preupgrade/postupgrade (or equivalent) logic to serialize/restore this state across upgrades. Without that, authenticated data can be lost on redeploy/upgrade.",
+      "id": "REQ-43",
+      "requirement": "Add safe preupgrade/postupgrade hooks in backend/main.mo that serialize non-stable in-memory structures into stable variables and reconstruct them on upgrade, without changing the public API shape.",
+      "reason": "The diff snippet for backend/main.mo shows in-memory Maps (userProfiles, dailyStats, userDailyGoals) but does not show any `stable` variables nor `system func preupgrade()` / `system func postupgrade()` implementations. Because the file is truncated, this cannot be confirmed as implemented.",
       "evidence": [
-        "backend/main.mo"
+        "backend/main.mo (truncated; no stable vars or system preupgrade/postupgrade shown)"
       ]
-    }
-  ],
-  "hallucinated_features": [
+    },
     {
-      "description": "Added backend admin/third-party access query endpoints for reading another user’s day totals/stats (getDayTotalForUser, getDayStatsForUser).",
-      "reason": "These APIs are not requested by REQ-39/40/41 (which focus on persistence/rehydration and upgrade-stable storage). They appear to be additional capabilities beyond the scope.",
+      "id": "REQ-42",
+      "requirement": "Implement canister state persistence for authenticated user data so it does not reset after deployments/upgrades (persist/restore userProfiles, per-user per-day dailyStats, and userDailyGoals).",
+      "reason": "No explicit persistence mechanism (stable-state capture/restore) is visible in the shown backend diff. The Maps are still declared as non-stable `let` bindings in the visible portion, and no upgrade persistence logic is evidenced. Truncation prevents verification.",
       "evidence": [
-        "backend/main.mo"
+        "backend/main.mo (truncated; shows `let userProfiles = Map.empty...`, `let dailyStats = Map.empty...`, `let userDailyGoals = Map.empty...` without persistence code in view)"
       ]
     }
   ],
+  "hallucinated_features": [],
   "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/features/counter/CounterScreen.tsx",
     "frontend/src/features/stats/StatsView.tsx",
-    "frontend/src/hooks/useQueries.ts",
     "project_state.json"
   ]
 }

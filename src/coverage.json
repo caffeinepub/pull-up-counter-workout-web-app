@@ -1,63 +1,53 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T20:01:04.115Z",
+  "generatedAt": "2026-02-15T20:10:41.144Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 3,
-    "implemented": 2,
+    "implemented": 1,
     "items": [
       {
-        "id": "REQ-39",
-        "summary": "Investigate and fix why a user’s logged sets/today totals and daily goal can appear to disappear after a page refresh or browser restart, and ensure values rehydrate correctly on app load for both unauthenticated (local-only) and authenticated (backend-synced) modes.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/features/counter/CounterScreen.tsx",
-          "frontend/src/features/stats/StatsView.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/features/counter/CounterScreen.tsx",
-          "frontend/src/features/stats/StatsView.tsx"
-        ]
-      },
-      {
-        "id": "REQ-40",
-        "summary": "Update the frontend to avoid presenting transient loading states as real “reset” values for authenticated users on initial load/refresh (e.g., showing 0/null totals/goals while identity/actor/queries are initializing). Use explicit loading/placeholder UI until backend values are fetched or an error state is confirmed.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/features/counter/CounterScreen.tsx",
-          "frontend/src/features/stats/StatsView.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/features/counter/CounterScreen.tsx",
-          "frontend/src/features/stats/StatsView.tsx"
-        ]
-      },
-      {
-        "id": "REQ-41",
-        "summary": "Persist authenticated user data in the Motoko canister across upgrades by storing and restoring all required state in stable variables via upgrade hooks, including (at minimum) user profiles, per-user per-day stats/totals, and per-user daily goals.",
+        "id": "REQ-42",
+        "summary": "Implement canister state persistence for authenticated user data so it does not reset after deployments/upgrades. Persist and restore, at minimum: userProfiles, per-user per-day dailyStats (reps + sets keyed by dayStamp), and userDailyGoals.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
+      },
+      {
+        "id": "REQ-43",
+        "summary": "Add safe preupgrade/postupgrade hooks in backend/main.mo that serialize non-stable in-memory structures into stable variables and reconstruct them on upgrade, without changing the public API shape.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-44",
+        "summary": "Ensure the frontend does not misrepresent backend persistence failures as valid zero values for authenticated users: when backend queries fail (e.g., due to traps/upgrade issues), show an explicit error state with a retry action (do not silently fall back to 0). Apply this to Today total/goal on Counter and stats/goal on Stats.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/features/counter/CounterScreen.tsx",
+          "frontend/src/features/stats/StatsView.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/features/counter/CounterScreen.tsx",
+          "frontend/src/features/stats/StatsView.tsx"
+        ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/features/counter/CounterScreen.tsx",
     "frontend/src/features/stats/StatsView.tsx",
-    "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

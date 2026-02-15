@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 19,
+  "projectStateVersion": 21,
   "summary": "Build a pull-up counter web app focused on a day-based running tally (“Today” total) across multiple sets, without the workout session start/end + saved session history flow.",
   "architectural_notes": [
     "Introduce a dedicated Stats tab for daily/day-focused stats; adjust navigation/routing accordingly.",
@@ -11,7 +11,8 @@
     "Logging appears to be broken (sets/reps not being recorded/updated correctly); investigate and fix.",
     "Daily target goal is not tracking/updating correctly on the Counter (front) page.",
     "Stats are not being persisted reliably (appear to reset / not keep values across refreshes or over time); investigate persistence and day-change/reset logic.",
-    "User data (today totals/stats) is not persisting across page refreshes or browser restarts; values disappear after refresh/close."
+    "User data (today totals/stats) is not persisting across page refreshes or browser restarts; values disappear after refresh/close.",
+    "After deploying Version 9, data still does not persist (values reset/disappear after refresh/reopen); persistence fix is still incomplete."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -286,6 +287,14 @@
         "REQ-40"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-ensure-the-frontend-does-not-misrepresent-backend-persistence-failures-as-valid-zero-values-for-authenticated-users-when-backend-queries-fail-e-g-due-to-traps-upgrade-issues-show-an-explicit-error-state-with-a-retry-action-do-not-silently-fall-back-to-0-apply-this-to-today-total-goal-on-counter-and-stats-goal-on-stats",
+      "title": "Ensure the frontend does not misrepresent backend persistence failures as valid zero values for authenticated users: when backend queries fail (e.g., due to traps/upgrade issues), show an explicit error state with a retry action (do not silently fall back to 0). Apply this to Today total/goal on Counter and stats/goal on Stats.",
+      "reqIds": [
+        "REQ-44"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -388,6 +397,22 @@
       "summary": "Persist authenticated user data in the Motoko canister across upgrades by storing and restoring all required state in stable variables via upgrade hooks, including (at minimum) user profiles, per-user per-day stats/totals, and per-user daily goals.",
       "reqIds": [
         "REQ-41"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-30",
+      "summary": "Implement canister state persistence for authenticated user data so it does not reset after deployments/upgrades. Persist and restore, at minimum: userProfiles, per-user per-day dailyStats (reps + sets keyed by dayStamp), and userDailyGoals.",
+      "reqIds": [
+        "REQ-42"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-31",
+      "summary": "Add safe preupgrade/postupgrade hooks in backend/main.mo that serialize non-stable in-memory structures into stable variables and reconstruct them on upgrade, without changing the public API shape.",
+      "reqIds": [
+        "REQ-43"
       ],
       "status": "pending"
     }
