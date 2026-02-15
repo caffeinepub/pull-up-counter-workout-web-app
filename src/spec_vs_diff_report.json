@@ -1,0 +1,52 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-15T17:50:08.245Z",
+  "summary": "Diff adds day-stamp utilities, backend queries for day-specific stats, React Query hook for fetching stats by selected day, a Stats date selector, and a draft+confirm flow for editing daily goals on Counter. Some acceptance-criteria details cannot be verified from the truncated diffs (notably Counter progress display wiring and Confirm button disabled/loading behavior).",
+  "missing_requirements": [
+    {
+      "id": "REQ-30",
+      "requirement": "Counter screen must display authenticated user’s Today reps total from backend in \"Today's Progress\" (not 0), and update numerator/progress bar immediately after logging a set.",
+      "reason": "CounterScreen.tsx shows a new authenticated query (useGetTodayTotal) and mutation invalidation exists, but the truncated diff does not include the render section where \"Today's Progress\" numerator/progress bar is computed, so it’s not verifiable that backendTodayTotal is actually used instead of local/0 and that UI updates correctly without refresh.",
+      "evidence": [
+        "frontend/src/features/counter/CounterScreen.tsx (truncated)",
+        "frontend/src/hooks/useQueries.ts (useGetTodayTotal, useIncrementTodayTotal invalidations; truncated)"
+      ]
+    },
+    {
+      "id": "REQ-31",
+      "requirement": "Confirm button disabled when input unchanged from currently-applied daily goal, and shows loading/disabled state while authenticated save mutation is in progress.",
+      "reason": "Draft state and confirm handler are present, but the truncated CounterScreen.tsx does not show the Confirm button JSX nor any usage of the mutation loading state (e.g., setBackendGoal.isPending) to disable/show loading, so this AC is not verifiable.",
+      "evidence": [
+        "frontend/src/features/counter/CounterScreen.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-31",
+      "requirement": "Clear behavior remains available and clears the goal (authenticated: set to 0 per backend contract; unauthenticated: clears local goal).",
+      "reason": "The confirm handler logic is truncated mid-way and the JSX/actions for a Clear button are not shown, so it’s not verifiable that Clear still exists and that authenticated clear maps to setting 0 (vs null/no-op).",
+      "evidence": [
+        "frontend/src/features/counter/CounterScreen.tsx (truncated)"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Backend queries for getting another user’s day stats/totals (getDayTotalForUser, getDayStatsForUser).",
+      "reason": "BuildRequest only calls for authenticated retrieval of the caller’s stats for an arbitrary day to support Stats date selection; adding cross-user/day queries is not requested.",
+      "evidence": [
+        "backend/main.mo (functions getDayTotalForUser, getDayStatsForUser)"
+      ]
+    }
+  ],
+  "confidence": 0.62,
+  "changed_files": [
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/features/counter/CounterScreen.tsx",
+    "frontend/src/features/stats/StatsView.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/utils/dayStamp.ts",
+    "project_state.json"
+  ]
+}

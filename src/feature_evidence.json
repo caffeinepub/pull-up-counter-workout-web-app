@@ -1,0 +1,84 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-fix-the-counter-front-page-daily-goal-progress-so-it-correctly-tracks-authenticated-users-today-reps-total-against-the-daily-target-goal",
+      "featureTitle": "Fix the Counter (front page) daily goal progress so it correctly tracks authenticated users’ Today reps total against the daily target goal.",
+      "files": [
+        "frontend/src/features/counter/CounterScreen.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-30"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-change-daily-target-goal-editing-on-the-counter-screen-to-require-an-explicit-confirm-save-action-instead-of-auto-saving-on-input-blur-enter-and-add-a-confirm-button-for-applying-the-daily-target",
+      "featureTitle": "Change daily target goal editing on the Counter screen to require an explicit confirm/save action instead of auto-saving on input blur/Enter, and add a \"Confirm\" button for applying the daily target.",
+      "files": [
+        "frontend/src/features/counter/CounterScreen.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-31"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-calendar-date-selector-on-the-stats-screen-that-lets-signed-in-users-select-a-day-and-view-stats-for-that-selected-day-including-prior-days",
+      "featureTitle": "Add a calendar/date selector on the Stats screen that lets signed-in users select a day and view stats for that selected day (including prior days).",
+      "files": [
+        "frontend/src/features/stats/StatsView.tsx",
+        "frontend/src/utils/dayStamp.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-32"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-extend-react-query-hooks-and-backend-integration-to-support-fetching-stats-for-an-arbitrary-selected-day-in-the-stats-screen-using-the-existing-backend-day-based-stats-query-capability",
+      "featureTitle": "Extend React Query hooks and backend integration to support fetching stats for an arbitrary selected day in the Stats screen, using the existing backend day-based stats query capability.",
+      "files": [
+        "frontend/src/features/stats/StatsView.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-33"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

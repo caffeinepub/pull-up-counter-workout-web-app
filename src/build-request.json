@@ -1,0 +1,96 @@
+{
+  "kind": "build_request",
+  "title": "Fix Counter daily goal tracking, add confirm button for daily target, and add calendar to view prior days in Stats",
+  "priority": "high",
+  "requirements": [
+    {
+      "id": "REQ-30",
+      "text": "Fix the Counter (front page) daily goal progress so it correctly tracks authenticated users’ Today reps total against the daily target goal.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "stats tab seems to be working better, but the daily goal is not tracking on the front page."
+        ]
+      },
+      "acceptanceCriteria": [
+        "When signed in and a daily target goal is set, the Counter screen’s \"Today's Progress\" displays the authenticated user’s current Today reps total (from backend) instead of 0.",
+        "After logging a set while signed in, the Counter screen’s goal progress (numerator and progress bar) updates to reflect the new Today reps total without requiring a full page refresh.",
+        "When not signed in, the Counter screen continues using local Today reps for the goal progress as before."
+      ]
+    },
+    {
+      "id": "REQ-31",
+      "text": "Change daily target goal editing on the Counter screen to require an explicit confirm/save action instead of auto-saving on input blur/Enter, and add a \"Confirm\" button for applying the daily target.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Add a confirm button for the daily target"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Editing the daily target input does not persist changes to backend (authenticated) or localStorage (unauthenticated) until the user clicks a \"Confirm\" button.",
+        "The Confirm button is disabled when the input is unchanged from the currently-applied daily goal, and shows a loading/disabled state while the save mutation is in progress for authenticated users.",
+        "Invalid input (non-numeric or negative) is rejected with an English error message and does not update the stored goal.",
+        "The existing \"Clear\" behavior remains available and clears the goal (authenticated: set to 0 per current backend contract; unauthenticated: clears local goal)."
+      ]
+    },
+    {
+      "id": "REQ-32",
+      "text": "Add a calendar/date selector on the Stats screen that lets signed-in users select a day and view stats for that selected day (including prior days).",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "also add a calendar so i can see prior days in the stats page."
+        ]
+      },
+      "acceptanceCriteria": [
+        "The Stats screen includes a date selector (calendar UI or date input) with a visible currently selected date.",
+        "When signed in, changing the selected date updates the displayed stats to those for the selected day (Total Reps, Sets Logged, Avg Reps/Set).",
+        "If there are no stats for a selected day, the UI shows zeros (or a clear \"No data for this day\" message) in English without throwing errors.",
+        "When not signed in, the Stats screen does not attempt to fetch historical days from the backend; it either limits viewing to today’s local stats or displays an English sign-in prompt for viewing prior days."
+      ]
+    },
+    {
+      "id": "REQ-33",
+      "text": "Extend React Query hooks and backend integration to support fetching stats for an arbitrary selected day in the Stats screen, using the existing backend day-based stats query capability.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "also add a calendar so i can see prior days in the stats page."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Frontend includes a new query hook (or an extension of an existing hook) that fetches day stats given a selected date/day identifier, and uses a queryKey that includes the selected date/day so caching works correctly.",
+        "The backend exposes (or reuses) an authenticated query that allows retrieving stats for a specific day (not only today), and the frontend uses it when signed in.",
+        "No changes are made to immutable frontend paths listed in SYSTEM_CONTEXT.",
+        "After logging a set for today, the Stats screen still updates today’s stats correctly; selecting today in the calendar reflects the updated values."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single Motoko actor in backend/main.mo; only introduce/adjust migration logic in backend/migration.mo if persisted state schema changes are required.",
+    "Do not edit files under frontend/src/components/ui or any paths listed in frontend.immutablePaths in SYSTEM_CONTEXT.",
+    "Use English for all user-facing text."
+  ],
+  "nonGoals": [
+    "Adding workout session history features (session list/detail) beyond day-based stats selection.",
+    "Adding third-party calendar libraries or external services for calendar/date handling.",
+    "Implementing push notifications, real-time updates, or WebSocket-based syncing."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

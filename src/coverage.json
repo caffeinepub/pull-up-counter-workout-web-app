@@ -1,0 +1,84 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-15T17:50:08.248Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 4,
+    "implemented": 4,
+    "items": [
+      {
+        "id": "REQ-30",
+        "summary": "Fix the Counter (front page) daily goal progress so it correctly tracks authenticated users’ Today reps total against the daily target goal.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/features/counter/CounterScreen.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/features/counter/CounterScreen.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-31",
+        "summary": "Change daily target goal editing on the Counter screen to require an explicit confirm/save action instead of auto-saving on input blur/Enter, and add a \"Confirm\" button for applying the daily target.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/features/counter/CounterScreen.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/features/counter/CounterScreen.tsx"
+        ]
+      },
+      {
+        "id": "REQ-32",
+        "summary": "Add a calendar/date selector on the Stats screen that lets signed-in users select a day and view stats for that selected day (including prior days).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/features/stats/StatsView.tsx",
+          "frontend/src/utils/dayStamp.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/features/stats/StatsView.tsx",
+          "frontend/src/utils/dayStamp.ts"
+        ]
+      },
+      {
+        "id": "REQ-33",
+        "summary": "Extend React Query hooks and backend integration to support fetching stats for an arbitrary selected day in the Stats screen, using the existing backend day-based stats query capability.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/features/stats/StatsView.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/features/stats/StatsView.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/features/counter/CounterScreen.tsx",
+    "frontend/src/features/stats/StatsView.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/utils/dayStamp.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

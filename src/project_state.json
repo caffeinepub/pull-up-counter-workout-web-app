@@ -1,0 +1,333 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 15,
+  "summary": "Build a pull-up counter web app focused on a day-based running tally (“Today” total) across multiple sets, without the workout session start/end + saved session history flow.",
+  "architectural_notes": [
+    "Introduce a dedicated Stats tab for daily/day-focused stats; adjust navigation/routing accordingly.",
+    "Re-scope stats to daily-only by removing 7-day trend UI and related hooks/queries.",
+    "Stats screen should support selecting a specific date (e.g., via calendar) and loading the corresponding day’s stats; may require backend/API support for historical per-day stats retrieval."
+  ],
+  "known_issues": [
+    "Logging appears to be broken (sets/reps not being recorded/updated correctly); investigate and fix.",
+    "Daily target goal is not tracking/updating correctly on the Counter (front) page."
+  ],
+  "isFixRequest": true,
+  "existing_features": [
+    {
+      "id": "feature-create-a-pull-up-counter-screen-that-lets-the-user-track-reps-during-a-workout-session-including-a-large-rep-count-display-buttons-to-increment-and-decrement-reps-a-quick-reset-confirmation-and-an-optional-goal-input-with-progress-indication-e-g-reps-goal",
+      "title": "Create a pull-up counter screen that lets the user track reps during a workout session, including: a large rep count display, buttons to increment and decrement reps, a quick-reset confirmation, and an optional goal input with progress indication (e.g., reps/goal).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-workout-session-controls-on-the-counter-screen-start-session-end-session-and-an-optional-rest-timer-the-user-can-start-pause-reset-with-configurable-duration",
+      "title": "Add workout session controls on the counter screen: start session, end session, and an optional rest timer the user can start/pause/reset with configurable duration.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-persistent-workout-history-per-signed-in-user-using-internet-identity-store-completed-pull-up-sessions-timestamp-duration-total-reps-optional-goal-and-allow-the-user-to-view-a-list-of-past-sessions-with-basic-filtering-sorting-most-recent-first-and-a-session-detail-view",
+      "title": "Implement persistent workout history per signed-in user using Internet Identity: store completed pull-up sessions (timestamp, duration, total reps, optional goal) and allow the user to view a list of past sessions with basic filtering/sorting (most recent first) and a session detail view.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-simple-stats-view-for-the-signed-in-user-computed-from-saved-sessions-total-sessions-total-reps-best-session-reps-and-a-7-day-trend-summary-e-g-reps-per-day-for-last-7-days",
+      "title": "Add a simple stats view for the signed-in user, computed from saved sessions: total sessions, total reps, best session reps, and a 7-day trend summary (e.g., reps per day for last 7 days).",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-choose-and-apply-a-coherent-visual-theme-for-the-app-colors-typography-spacing-button-styles-and-card-layout-that-feels-appropriate-for-a-fitness-workout-tool-and-is-used-consistently-across-all-screens",
+      "title": "Choose and apply a coherent visual theme for the app (colors, typography, spacing, button styles, and card layout) that feels appropriate for a fitness/workout tool and is used consistently across all screens.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-the-required-generated-images-to-the-frontend-as-static-assets-under-frontend-public-assets-generated-and-use-them-in-the-ui-e-g-in-the-header-empty-states-without-routing-images-through-the-backend",
+      "title": "Add the required generated images to the frontend as static assets under frontend/public/assets/generated and use them in the UI (e.g., in the header/empty states) without routing images through the backend.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-counter-screen-to-support-a-day-based-running-tally-so-the-user-can-accumulate-a-single-today-total-across-multiple-sets-without-having-to-restart-the-workout-session-for-each-set",
+      "title": "Update the Counter screen to support a day-based running tally so the user can accumulate a single “Today” total across multiple sets without having to restart the workout session for each set.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-clear-set-workflow-on-the-counter-screen-that-does-not-require-using-the-existing-start-session-end-session-flow-for-each-set-e-g-a-single-action-to-log-set-and-continue-while-keeping-the-existing-session-feature-available",
+      "title": "Add a clear set workflow on the Counter screen that does not require using the existing Start Session / End Session flow for each set (e.g., a single action to “Log Set” and continue), while keeping the existing session feature available.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-wire-the-counter-screen-s-day-based-tally-ui-to-the-backend-for-authenticated-users-and-provide-a-local-only-fallback-for-unauthenticated-users-so-they-can-still-tabulate-a-today-total-on-a-single-device",
+      "title": "Wire the Counter screen’s day-based tally UI to the backend for authenticated users, and provide a local-only fallback for unauthenticated users so they can still tabulate a “Today” total on a single device.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-workout-session-workflow-from-the-counter-screen-so-the-app-only-supports-set-based-counting-and-logging-into-the-day-based-today-total-no-start-session-end-session-flow-no-session-summary-state",
+      "title": "Remove the workout session workflow from the Counter screen so the app only supports set-based counting and logging into the day-based “Today” total (no Start Session / End Session flow, no session summary state).",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-counter-screen-ui-behavior-to-keep-the-existing-set-reset-confirmation-but-make-it-independent-of-any-session-state-i-e-it-should-reset-only-the-current-set-rep-counter",
+      "title": "Update the Counter screen UI behavior to keep the existing set reset confirmation, but make it independent of any session state (i.e., it should reset only the current set rep counter).",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-session-history-and-session-statistics-navigation-and-routing-from-the-app-ui",
+      "title": "Remove session history and session statistics navigation and routing from the app UI.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-or-refactor-frontend-data-hooks-that-call-session-history-stats-backend-apis-so-the-frontend-builds-cleanly-without-unused-session-endpoints",
+      "title": "Remove or refactor frontend data hooks that call session/history/stats backend APIs so the frontend builds cleanly without unused session endpoints.",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-enhance-the-unauthenticated-local-only-daily-tracking-so-it-also-tracks-day-focused-stats-for-the-day-at-minimum-sets-logged-today-alongside-the-existing-local-today-rep-total-resetting-automatically-when-the-date-changes",
+      "title": "Enhance the unauthenticated (local-only) daily tracking so it also tracks day-focused stats for the day (at minimum: sets logged today) alongside the existing local today rep total, resetting automatically when the date changes.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-counter-screen-ui-to-display-day-focused-stats-alongside-the-existing-today-total-at-minimum-sets-logged-today-and-an-average-reps-per-set-derived-metric-using-backend-stats-when-authenticated-and-local-stats-when-unauthenticated",
+      "title": "Update the Counter screen UI to display day-focused stats alongside the existing Today total (at minimum: “Sets logged today” and an “Average reps per set” derived metric), using backend stats when authenticated and local stats when unauthenticated.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-simple-authenticated-only-7-day-trend-display-on-the-counter-screen-sourced-from-the-backend-using-the-existing-backend-trend-concept-and-add-adjust-react-query-hooks-to-fetch-these-stats-and-keep-them-in-sync-after-logging-sets",
+      "title": "Add a simple authenticated-only 7-day trend display on the Counter screen sourced from the backend (using the existing backend trend concept), and add/adjust React Query hooks to fetch these stats and keep them in sync after logging sets.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-new-dedicated-stats-tab-screen-that-contains-the-existing-daily-stats-and-trend-ui-currently-shown-on-the-counter-screen-today-s-stats-card-including-total-reps-sets-logged-avg-reps-set-authenticated-only-last-7-days-trend-and-the-unauthenticated-trend-sign-in-prompt",
+      "title": "Create a new dedicated \"Stats\" tab/screen that contains the existing daily stats and trend UI currently shown on the Counter screen (\"Today's Stats\" card including Total Reps, Sets Logged, Avg Reps/Set; authenticated-only \"Last 7 Days\" trend; and the unauthenticated trend sign-in prompt).",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-app-level-navigation-with-two-tabs-counter-and-stats-the-counter-tab-routes-to-the-existing-counter-screen-and-the-stats-tab-routes-to-the-new-stats-screen",
+      "title": "Add app-level navigation with two tabs: \"Counter\" and \"Stats\". The \"Counter\" tab routes to the existing counter screen and the \"Stats\" tab routes to the new stats screen.",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-counter-screen-to-remove-the-today-s-stats-card-all-trend-ui-and-any-related-sign-in-messaging-so-the-counter-screen-focuses-only-on-logging-the-current-set-rep-counter-goal-log-set-reset-set-reset-today-dialog-for-unauthenticated",
+      "title": "Update the Counter screen to remove the \"Today's Stats\" card, all trend UI, and any related sign-in messaging so the Counter screen focuses only on logging the current set (rep counter, goal, log set, reset set, reset today dialog for unauthenticated).",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-rest-timer-function-from-the-ui-by-removing-the-resttimer-component-from-the-counter-screen-and-eliminating-any-remaining-imports-references-so-the-feature-is-not-accessible-in-the-app",
+      "title": "Remove the rest timer function from the UI by removing the RestTimer component from the Counter screen and eliminating any remaining imports/references so the feature is not accessible in the app.",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-change-the-existing-target-reps-goal-on-the-counter-screen-from-a-per-set-goal-to-a-daily-target-goal-that-applies-to-the-day-based-today-total-not-the-current-set-rep-counter",
+      "title": "Change the existing \"Target Reps\" goal on the Counter screen from a per-set goal to a daily target goal that applies to the day-based \"Today\" total (not the current set rep counter).",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-backend-support-for-persisting-a-signed-in-user-s-daily-target-goal-for-the-current-day-and-expose-apis-to-set-get-that-goal-so-authenticated-users-have-the-same-daily-goal-across-refreshes-devices",
+      "title": "Add backend support for persisting a signed-in user’s daily target goal for the current day, and expose APIs to set/get that goal so authenticated users have the same daily goal across refreshes/devices.",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-last-7-days-section-from-the-stats-screen-ui-including-the-unauthenticated-trend-sign-in-messaging-that-references-7-day-trends-so-the-stats-screen-focuses-on-daily-numbers-only",
+      "title": "Remove the \"Last 7 Days\" section from the Stats screen UI (including the unauthenticated trend/sign-in messaging that references 7-day trends), so the Stats screen focuses on daily numbers only.",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-investigate-and-fix-the-broken-logging-behavior-so-that-logging-a-set-reliably-updates-the-authenticated-user-s-today-totals-reps-and-sets-and-the-stats-screen-reflects-the-updated-values",
+      "title": "Investigate and fix the broken logging behavior so that logging a set reliably updates the authenticated user’s Today totals (reps and sets) and the Stats screen reflects the updated values.",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-counter-front-page-daily-goal-progress-so-it-correctly-tracks-authenticated-users-today-reps-total-against-the-daily-target-goal",
+      "title": "Fix the Counter (front page) daily goal progress so it correctly tracks authenticated users’ Today reps total against the daily target goal.",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-change-daily-target-goal-editing-on-the-counter-screen-to-require-an-explicit-confirm-save-action-instead-of-auto-saving-on-input-blur-enter-and-add-a-confirm-button-for-applying-the-daily-target",
+      "title": "Change daily target goal editing on the Counter screen to require an explicit confirm/save action instead of auto-saving on input blur/Enter, and add a \"Confirm\" button for applying the daily target.",
+      "reqIds": [
+        "REQ-31"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-calendar-date-selector-on-the-stats-screen-that-lets-signed-in-users-select-a-day-and-view-stats-for-that-selected-day-including-prior-days",
+      "title": "Add a calendar/date selector on the Stats screen that lets signed-in users select a day and view stats for that selected day (including prior days).",
+      "reqIds": [
+        "REQ-32"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-react-query-hooks-and-backend-integration-to-support-fetching-stats-for-an-arbitrary-selected-day-in-the-stats-screen-using-the-existing-backend-day-based-stats-query-capability",
+      "title": "Extend React Query hooks and backend integration to support fetching stats for an arbitrary selected day in the Stats screen, using the existing backend day-based stats query capability.",
+      "reqIds": [
+        "REQ-33"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Create a pull-up counter web app for tracking workout pull-up reps.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Support a day-based running tally of pull-ups across multiple sets so the user can accumulate a daily total without restarting a workout session each set.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Implement backend support for a per-user day-based tally that can be incremented throughout the day and retrieved by the frontend, so authenticated users can keep an accurate “Today” total across refreshes/devices.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Remove backend support for saving and reading workout sessions and computing session-based stats so the canister only supports user profiles and daily totals.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Add day-focused stats tracking and display (e.g., today’s total, sets logged today, trends for the day/last few days) alongside the day-based tally.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Extend backend day-based tracking so it can return and persist day-focused stats (at minimum: total reps today and number of sets logged today) for authenticated users, while keeping existing “Today total reps” behavior working.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Update the backend upgrade/migration logic to safely migrate existing persisted daily totals data into the new per-day stats format without losing user data.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Move the day-focused stats display into a separate tab in the app UI (instead of showing it on the Counter screen).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Remove the rest timer function from the counter/workout controls UI (and any related logic).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Change the target reps/goal feature to be a daily target goal (applies to the day-based “Today” total) rather than a per-set goal.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-20",
+      "summary": "Remove the “Last 7 Days” / 7-day trend section from the Stats UI (and any related messaging/data fetching) so stats focuses on daily numbers only.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Add a calendar/date selector on the Stats screen so users can view stats for prior days (historical daily totals).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Add an explicit confirm/save button for setting the daily target goal (instead of auto-applying immediately).",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Pull-up counter workout web app",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}
